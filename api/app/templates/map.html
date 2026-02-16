@@ -1,0 +1,982 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <title>SigControl - Mapa Holo</title>
+
+  <style>
+    :root{
+      --hc-blue:#0b5ed7;
+      --hc-green:#16a34a;
+      --hc-cyan:#22d3ee;
+
+      --bg:#070b14;
+      --panel: rgba(9, 15, 28, .78);
+      --border: rgba(148,163,184,.18);
+      --text:#e2e8f0;
+      --muted:#94a3b8;
+
+      --ok:#22c55e;
+      --warn:#fbbf24;
+      --bad:#ef4444;
+      --stale:#e5e7eb;
+
+      /* para orientar tarjetas frente al usuario */
+      --inv-rx: -58deg;
+      --inv-rz:  16deg;
+    }
+
+    body{
+      margin:0;
+      background:
+        radial-gradient(1200px 700px at 50% 20%, rgba(34,211,238,.12), transparent 60%),
+        radial-gradient(900px 600px at 20% 70%, rgba(11,94,215,.10), transparent 55%),
+        radial-gradient(700px 500px at 80% 75%, rgba(22,163,74,.09), transparent 55%),
+        var(--bg);
+      color:var(--text);
+      overflow:hidden;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
+    }
+
+    .hc-nav{
+      background: linear-gradient(90deg, var(--hc-blue), var(--hc-green));
+      border-bottom: 1px solid rgba(255,255,255,.12);
+    }
+
+    #stage{
+      position:relative;
+      height: calc(100vh - 56px);
+      width:100vw;
+      overflow:hidden;
+    }
+
+    /* ===== HUD ===== */
+    .hud-left{
+      position:absolute; left:16px; top:16px;
+      z-index:40;
+      width: min(420px, calc(100% - 32px));
+      display:flex; flex-direction:column; gap:12px;
+    }
+    .hud-right{
+      position:absolute; right:16px; top:16px;
+      z-index:40;
+      width: min(480px, calc(100% - 32px));
+      display:flex; flex-direction:column; gap:12px;
+    }
+
+    .panel{
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      box-shadow: 0 18px 45px rgba(0,0,0,.45);
+      backdrop-filter: blur(10px);
+      padding: 14px;
+      position:relative;
+    }
+    .panel::before{
+      content:"";
+      position:absolute; inset:0;
+      border-radius: 18px;
+      background:
+        linear-gradient(120deg, rgba(34,211,238,.16), transparent 35%),
+        linear-gradient(300deg, rgba(11,94,215,.14), transparent 45%);
+      opacity:.55;
+      pointer-events:none;
+    }
+    .panel > *{ position:relative; }
+
+    .muted{ color:var(--muted); font-size:.9rem; }
+
+    .kbd{
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono";
+      font-size: .82rem;
+      padding: 2px 7px;
+      border-radius: 10px;
+      border: 1px solid rgba(255,255,255,.16);
+      background: rgba(255,255,255,.06);
+      color: var(--text);
+    }
+
+    .badge-soft{
+      background: rgba(255,255,255,.08);
+      border: 1px solid rgba(255,255,255,.14);
+      color: #e2e8f0;
+    }
+
+    /* ===== Mesa 3D ===== */
+    .world{
+      position:absolute; inset:0;
+      display:flex; align-items:center; justify-content:center;
+      perspective: 1200px;
+      z-index:10;
+    }
+
+    .map-table{
+      position:relative;
+      width: min(1200px, 92vw);
+      aspect-ratio: 16/10;
+      transform-style: preserve-3d;
+      transform: rotateX(58deg) rotateZ(-16deg);
+      transition: transform .12s ease;
+      border-radius: 22px;
+    }
+
+    .map-base{
+      position:absolute; inset:0;
+      border-radius: 22px;
+      background: linear-gradient(180deg, rgba(2,6,23,.95), rgba(2,6,23,.25));
+      transform: translateZ(0px);
+    }
+
+    .map-surface{
+      position:absolute; inset:0;
+      border-radius: 22px;
+      overflow:hidden;
+      border: 1px solid rgba(34,211,238,.22);
+      box-shadow:
+        0 70px 120px rgba(0,0,0,.65),
+        0 0 0 1px rgba(255,255,255,.06) inset;
+      background: #091227;
+      transform: translateZ(18px);
+    }
+
+    .map-surface img{
+      width:100%; height:100%;
+      object-fit: cover;
+      filter: saturate(1.05) contrast(1.08) brightness(.92);
+      opacity: .72;
+      transform: scale(1.02);
+    }
+
+    .grid-overlay{
+      position:absolute; inset:0;
+      background:
+        linear-gradient(rgba(34,211,238,.14) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(34,211,238,.14) 1px, transparent 1px);
+      background-size: 44px 44px;
+      mix-blend-mode: screen;
+      opacity: .22;
+      pointer-events:none;
+    }
+
+    .scanline{
+      position:absolute; inset:0;
+      background: linear-gradient(180deg, transparent, rgba(34,211,238,.18), transparent);
+      animation: scan 3.6s linear infinite;
+      pointer-events:none;
+      mix-blend-mode: screen;
+      opacity:.0;
+    }
+    @keyframes scan{
+      0%{ transform: translateY(-110%); opacity:.0; }
+      12%{ opacity:.35; }
+      50%{ opacity:.18; }
+      100%{ transform: translateY(110%); opacity:.0; }
+    }
+
+    /* ===== Capas SVG (zonas / rutas) ===== */
+    .layer-svg{
+      position:absolute; inset:0;
+      width:100%; height:100%;
+      pointer-events:none;
+      z-index: 4;
+    }
+
+    /* ===== Pins ===== */
+    .pin{
+      position:absolute;
+      width: 18px;
+      height: 18px;
+      transform: translate(-50%, -50%);
+      border-radius: 999px;
+      cursor:pointer;
+      border: 1px solid rgba(255,255,255,.30);
+      box-shadow: 0 0 0 6px rgba(34,211,238,.09), 0 0 18px rgba(34,211,238,.22);
+      transition: transform .08s ease, box-shadow .12s ease;
+      user-select:none;
+      z-index: 6;
+      pointer-events:auto;
+    }
+    .pin:hover{
+      transform: translate(-50%, -50%) scale(1.18);
+      box-shadow: 0 0 0 10px rgba(34,211,238,.10), 0 0 28px rgba(34,211,238,.34);
+    }
+    .pin.ok{ background: var(--ok); }
+    .pin.warn{ background: var(--warn); }
+    .pin.disabled{ background: var(--bad); }
+    .pin.stale{ background: var(--stale); }
+    .pin .dot{
+      position:absolute; inset:3px;
+      border-radius:999px;
+      background: rgba(2,6,23,.35);
+      border: 1px solid rgba(255,255,255,.18);
+    }
+    .pulse{
+      position:absolute; inset:-14px;
+      border-radius:999px;
+      border: 1px solid rgba(34,211,238,.35);
+      animation: pulse 2.2s ease-out infinite;
+      pointer-events:none;
+    }
+    @keyframes pulse{
+      0%{ transform: scale(.2); opacity:.0; }
+      20%{ opacity:.55; }
+      100%{ transform: scale(1.25); opacity:0; }
+    }
+
+    /* ===== Tarjetas flotantes sobre el mapa ===== */
+    .float-card{
+      position:absolute;
+      min-width: 240px;
+      max-width: 320px;
+      padding: 12px;
+      border-radius: 16px;
+      background: rgba(7, 14, 28, .72);
+      border: 1px solid rgba(34,211,238,.22);
+      box-shadow:
+        0 18px 45px rgba(0,0,0,.55),
+        0 0 24px rgba(34,211,238,.10);
+      backdrop-filter: blur(12px);
+      transform-style: preserve-3d;
+      pointer-events:none; /* no estorba a pins */
+      z-index: 8;
+      opacity:.95;
+
+      /* “levantar” la tarjeta y voltearla para que se lea */
+      transform:
+        translate(-50%, -50%)
+        translateZ(70px)
+        rotateZ(var(--inv-rz))
+        rotateX(var(--inv-rx));
+    }
+    .float-card .title{
+      font-weight: 700;
+      letter-spacing: .2px;
+    }
+    .float-card .sub{
+      color: var(--muted);
+      font-size: .85rem;
+      margin-top:2px;
+    }
+    .float-card .divider{
+      height:1px; background: rgba(148,163,184,.18);
+      margin:10px 0;
+    }
+
+    /* Mini chart */
+    .mini-chart{
+      width:100%; height:70px;
+      border-radius: 12px;
+      background: rgba(255,255,255,.04);
+      border: 1px solid rgba(255,255,255,.08);
+      overflow:hidden;
+    }
+
+    /* Tooltip */
+    #tip{
+      position:absolute;
+      z-index:60;
+      pointer-events:none;
+      background: rgba(2,6,23,.92);
+      border: 1px solid rgba(148,163,184,.22);
+      color: var(--text);
+      padding: 10px 12px;
+      border-radius: 14px;
+      box-shadow: 0 18px 45px rgba(0,0,0,.6);
+      display:none;
+      white-space: nowrap;
+      transform: translate(-50%, -120%);
+    }
+
+    .table-darkish{
+      --bs-table-bg: transparent;
+      --bs-table-striped-bg: rgba(255,255,255,.04);
+      color: var(--text);
+    }
+  </style>
+</head>
+
+<body>
+<nav class="navbar navbar-dark hc-nav px-3">
+  <span class="navbar-brand fw-semibold">SigControl Central · Mapa Holográfico</span>
+  <div class="d-flex gap-2">
+    <a class="btn btn-outline-light btn-sm" href="/dashboard">Dashboard</a>
+  </div>
+</nav>
+
+<div id="stage">
+
+  <div class="hud-left">
+    <div class="panel">
+      <div class="d-flex justify-content-between align-items-start">
+        <div>
+          <div class="fw-semibold">Control</div>
+          <div class="muted">Hover info · Click seleccionar · Shift+arrastrar (editor)</div>
+        </div>
+        <span id="role_badge" class="badge badge-soft">...</span>
+      </div>
+
+      <div class="d-flex flex-wrap gap-2 mt-3">
+        <button class="btn btn-sm btn-outline-light" onclick="resetView()">Reset vista</button>
+        <button class="btn btn-sm btn-outline-light" onclick="reloadAll()">Recargar</button>
+      </div>
+
+      <div class="mt-3 d-flex flex-wrap gap-2">
+        <div class="form-check form-switch">
+          <input class="form-check-input" type="checkbox" id="togPins" checked onchange="applyToggles()">
+          <label class="form-check-label muted" for="togPins">Pins</label>
+        </div>
+        <div class="form-check form-switch">
+          <input class="form-check-input" type="checkbox" id="togZones" checked onchange="applyToggles()">
+          <label class="form-check-label muted" for="togZones">Zonas</label>
+        </div>
+        <div class="form-check form-switch">
+          <input class="form-check-input" type="checkbox" id="togRoutes" checked onchange="applyToggles()">
+          <label class="form-check-label muted" for="togRoutes">Rutas</label>
+        </div>
+        <div class="form-check form-switch">
+          <input class="form-check-input" type="checkbox" id="togCards" checked onchange="applyToggles()">
+          <label class="form-check-label muted" for="togCards">Tarjetas</label>
+        </div>
+      </div>
+
+      <div class="mt-3 muted">
+        <div class="fw-semibold text-white">Leyenda</div>
+        <div>🟢 OK · 🟡 Alerta · 🔴 Deshabilitada · ⚪ Sin eventos</div>
+      </div>
+
+      <div id="load_msg" class="text-warning small mt-2"></div>
+    </div>
+  </div>
+
+  <div class="hud-right">
+    <div class="panel">
+      <div class="d-flex justify-content-between align-items-start">
+        <div>
+          <div class="fw-semibold">Puerta</div>
+          <div id="sel_sub" class="muted">Ninguna seleccionada</div>
+        </div>
+        <span id="sel_alert" class="badge badge-soft">—</span>
+      </div>
+
+      <div id="sel_body" class="mt-2 muted">Click en un pin para ver detalles.</div>
+
+      <div class="d-flex gap-2 mt-3">
+        <button id="btn_enable" class="btn btn-sm btn-success" style="display:none;" onclick="setDoorEnabled(true)">Habilitar</button>
+        <button id="btn_disable" class="btn btn-sm btn-danger" style="display:none;" onclick="setDoorEnabled(false)">Deshabilitar</button>
+      </div>
+
+      <div id="sel_msg" class="text-warning small mt-2"></div>
+
+      <hr style="border-color: rgba(148,163,184,.2);"/>
+
+      <div class="d-flex justify-content-between align-items-center">
+        <div class="fw-semibold">Eventos recientes</div>
+        <button class="btn btn-sm btn-outline-light" onclick="reloadDoorEvents()">Actualizar</button>
+      </div>
+
+      <div class="table-responsive mt-2" style="max-height: 320px; overflow:auto;">
+        <table class="table table-sm table-striped table-darkish align-middle">
+          <thead>
+            <tr>
+              <th>Fecha</th>
+              <th>Resultado</th>
+              <th>Detalles</th>
+            </tr>
+          </thead>
+          <tbody id="door_events_rows"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="world">
+    <div id="table" class="map-table">
+      <div class="map-base"></div>
+
+      <div id="surface" class="map-surface">
+        <img id="mapImg" src="/static/img/planta.png" alt="Mapa">
+        <div class="grid-overlay"></div>
+        <div class="scanline"></div>
+
+        <!-- SVG ZONAS -->
+        <svg id="zonesSvg" class="layer-svg" viewBox="0 0 1000 625" preserveAspectRatio="none"></svg>
+
+        <!-- SVG RUTAS -->
+        <svg id="routesSvg" class="layer-svg" viewBox="0 0 1000 625" preserveAspectRatio="none"></svg>
+
+        <!-- Tarjetas flotantes -->
+        <div id="cardsLayer"></div>
+
+        <!-- Pins -->
+        <div id="pinsLayer"></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="tip"></div>
+</div>
+
+<script>
+/* ===========================
+   ✅ EDITA AQUÍ: ZONAS / RUTAS
+   Coordenadas en “pixeles” del SVG:
+   ancho=1000, alto=625
+   (así es fácil dibujar a mano)
+=========================== */
+
+const ZONES = [
+  {
+    id: "zona_azul_1",
+    name: "Zona Operativa A",
+    color: "rgba(34,211,238,.22)",
+    stroke: "rgba(34,211,238,.75)",
+    points: [
+      [120, 420],[260, 380],[360, 430],[320, 520],[170, 540]
+    ]
+  },
+  {
+    id: "zona_azul_2",
+    name: "Zona Operativa B",
+    color: "rgba(11,94,215,.18)",
+    stroke: "rgba(11,94,215,.75)",
+    points: [
+      [640, 180],[820, 210],[790, 360],[600, 330]
+    ]
+  }
+];
+
+const ROUTES = [
+  {
+    id:"ruta_1",
+    name:"Ruta Principal",
+    color:"rgba(34,211,238,.85)",
+    width: 6,
+    points: [
+      [140, 520],[260, 490],[390, 470],[520, 430],[680, 410],[840, 360]
+    ]
+  }
+];
+
+/* Tarjetas holográficas “en el mapa” */
+const FLOAT_CARDS = [
+  {
+    id:"card_1",
+    title:"Analytics Operación",
+    sub:"Últimas 24h · accesos",
+    x: 270, y: 260
+  },
+  {
+    id:"card_2",
+    title:"Predicción Incidencias",
+    sub:"Riesgo por zona",
+    x: 760, y: 140
+  }
+];
+
+/* ===========================
+   APP
+=========================== */
+
+let token = sessionStorage.getItem("token");
+let ME = null;
+let DOORS = [];
+let selected = null;
+
+const loadMsg = document.getElementById('load_msg');
+const roleBadge = document.getElementById('role_badge');
+const surface = document.getElementById('surface');
+const table = document.getElementById('table');
+const tip = document.getElementById('tip');
+
+const zonesSvg = document.getElementById('zonesSvg');
+const routesSvg = document.getElementById('routesSvg');
+const cardsLayer = document.getElementById('cardsLayer');
+const pinsLayer  = document.getElementById('pinsLayer');
+
+function escapeHtml(s){
+  return String(s ?? '')
+    .replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;')
+    .replaceAll('"','&quot;').replaceAll("'","&#039;");
+}
+
+async function api(url, options={}){
+  options.headers = options.headers || {};
+  options.headers['Authorization'] = 'Bearer ' + token;
+  if(options.body && !options.headers['Content-Type']){
+    options.headers['Content-Type'] = 'application/json';
+  }
+  const r = await fetch(url, options);
+  if(!r.ok){
+    const t = await r.text().catch(()=> '');
+    throw new Error(t || ('HTTP ' + r.status));
+  }
+  const ct = r.headers.get('content-type') || '';
+  if(ct.includes('application/json')) return r.json();
+  return r.text();
+}
+
+async function loadMe(){
+  ME = await api('/api/auth/me');
+  roleBadge.textContent = `${ME.role}${ME.can_edit ? ' (editor)' : ''}`;
+}
+
+function resetView(){
+  baseRX = 58;
+  baseRZ = -16;
+  currentRX = baseRX;
+  currentRZ = baseRZ;
+  applyTableTransform(baseRX, baseRZ);
+}
+
+function applyTableTransform(rx, rz){
+  table.style.transform = `rotateX(${rx}deg) rotateZ(${rz}deg)`;
+  document.documentElement.style.setProperty('--inv-rx', (-rx) + 'deg');
+  document.documentElement.style.setProperty('--inv-rz', (-rz) + 'deg');
+}
+
+function alertLabel(a){
+  if(a === 'disabled') return 'Deshabilitada';
+  if(a === 'warn') return 'Alerta';
+  if(a === 'stale') return 'Sin eventos';
+  return 'OK';
+}
+function alertBadgeClass(a){
+  if(a === 'disabled') return 'bg-danger';
+  if(a === 'warn') return 'bg-warning text-dark';
+  if(a === 'stale') return 'bg-secondary';
+  return 'bg-success';
+}
+function pinClass(a){
+  if(a === 'disabled') return 'disabled';
+  if(a === 'warn') return 'warn';
+  if(a === 'stale') return 'stale';
+  return 'ok';
+}
+
+function showTip(x, y, html){
+  tip.style.display = 'block';
+  tip.style.left = x + 'px';
+  tip.style.top = y + 'px';
+  tip.innerHTML = html;
+}
+function hideTip(){ tip.style.display = 'none'; }
+
+function norm01(v){
+  v = Number(v);
+  if(Number.isNaN(v)) return 0.5;
+  return Math.max(0, Math.min(1, v));
+}
+
+function clearPins(){ pinsLayer.innerHTML = ''; }
+function clearZones(){ zonesSvg.innerHTML = ''; }
+function clearRoutes(){ routesSvg.innerHTML = ''; }
+function clearCards(){ cardsLayer.innerHTML = ''; }
+
+/* ===== Render ZONES ===== */
+function renderZones(){
+  clearZones();
+
+  // filtros glow
+  zonesSvg.innerHTML = `
+    <defs>
+      <filter id="glowZone" x="-50%" y="-50%" width="200%" height="200%">
+        <feGaussianBlur stdDeviation="3" result="blur"/>
+        <feMerge>
+          <feMergeNode in="blur"/>
+          <feMergeNode in="SourceGraphic"/>
+        </feMerge>
+      </filter>
+    </defs>
+  `;
+
+  for(const z of ZONES){
+    const pts = z.points.map(p => p.join(',')).join(' ');
+    const poly = document.createElementNS('http://www.w3.org/2000/svg','polygon');
+    poly.setAttribute('points', pts);
+    poly.setAttribute('fill', z.color);
+    poly.setAttribute('stroke', z.stroke);
+    poly.setAttribute('stroke-width', '2');
+    poly.setAttribute('filter', 'url(#glowZone)');
+    poly.setAttribute('opacity', '0.95');
+
+    zonesSvg.appendChild(poly);
+
+    // label
+    const cx = z.points.reduce((a,p)=>a+p[0],0)/z.points.length;
+    const cy = z.points.reduce((a,p)=>a+p[1],0)/z.points.length;
+
+    const text = document.createElementNS('http://www.w3.org/2000/svg','text');
+    text.setAttribute('x', cx);
+    text.setAttribute('y', cy);
+    text.setAttribute('text-anchor', 'middle');
+    text.setAttribute('fill', 'rgba(226,232,240,.9)');
+    text.setAttribute('font-size', '14');
+    text.setAttribute('font-family', 'ui-sans-serif, system-ui');
+    text.textContent = z.name;
+
+    zonesSvg.appendChild(text);
+  }
+}
+
+/* ===== Render ROUTES ===== */
+function renderRoutes(){
+  clearRoutes();
+
+  routesSvg.innerHTML = `
+    <defs>
+      <filter id="glowRoute" x="-50%" y="-50%" width="200%" height="200%">
+        <feGaussianBlur stdDeviation="4" result="blur"/>
+        <feMerge>
+          <feMergeNode in="blur"/>
+          <feMergeNode in="SourceGraphic"/>
+        </feMerge>
+      </filter>
+
+      <linearGradient id="routeGrad" x1="0" x2="1" y1="0" y2="0">
+        <stop offset="0" stop-color="rgba(34,211,238,.15)"/>
+        <stop offset="0.4" stop-color="rgba(34,211,238,.85)"/>
+        <stop offset="1" stop-color="rgba(34,211,238,.15)"/>
+      </linearGradient>
+    </defs>
+  `;
+
+  for(const r of ROUTES){
+    const d = r.points.map((p,i)=> (i===0?`M ${p[0]} ${p[1]}`:`L ${p[0]} ${p[1]}`)).join(' ');
+
+    // “base glow”
+    const pathGlow = document.createElementNS('http://www.w3.org/2000/svg','path');
+    pathGlow.setAttribute('d', d);
+    pathGlow.setAttribute('stroke', r.color);
+    pathGlow.setAttribute('stroke-width', String(r.width+4));
+    pathGlow.setAttribute('stroke-linecap','round');
+    pathGlow.setAttribute('stroke-linejoin','round');
+    pathGlow.setAttribute('fill','none');
+    pathGlow.setAttribute('opacity','0.22');
+    pathGlow.setAttribute('filter','url(#glowRoute)');
+    routesSvg.appendChild(pathGlow);
+
+    // “line principal”
+    const path = document.createElementNS('http://www.w3.org/2000/svg','path');
+    path.setAttribute('d', d);
+    path.setAttribute('stroke', 'url(#routeGrad)');
+    path.setAttribute('stroke-width', String(r.width));
+    path.setAttribute('stroke-linecap','round');
+    path.setAttribute('stroke-linejoin','round');
+    path.setAttribute('fill','none');
+    path.setAttribute('filter','url(#glowRoute)');
+    routesSvg.appendChild(path);
+
+    // animación de “travel”
+    const anim = document.createElementNS('http://www.w3.org/2000/svg','animate');
+    anim.setAttribute('attributeName','stroke-dashoffset');
+    anim.setAttribute('values','200;0');
+    anim.setAttribute('dur','2.8s');
+    anim.setAttribute('repeatCount','indefinite');
+
+    path.setAttribute('stroke-dasharray','18 14');
+    path.setAttribute('stroke-dashoffset','200');
+    path.appendChild(anim);
+  }
+}
+
+/* ===== Mini chart SVG ===== */
+function miniChartSvg(){
+  // barras holográficas simples (look parecido al ejemplo)
+  const bars = [12, 30, 18, 45, 28, 58, 40, 66, 38, 54, 30, 60];
+  const w = 320, h = 70, pad = 10;
+  const bw = (w - pad*2) / bars.length;
+
+  const rects = bars.map((v,i)=>{
+    const bh = Math.max(6, v);
+    const x = pad + i*bw + 2;
+    const y = h - bh - 8;
+    const ww = bw - 4;
+    return `<rect x="${x}" y="${y}" width="${ww}" height="${bh}" rx="3" fill="rgba(34,211,238,.82)"/>`;
+  }).join('');
+
+  return `
+    <svg viewBox="0 0 ${w} ${h}" width="100%" height="70" preserveAspectRatio="none">
+      <defs>
+        <linearGradient id="bg" x1="0" x2="1" y1="0" y2="1">
+          <stop offset="0" stop-color="rgba(11,94,215,.18)"/>
+          <stop offset="1" stop-color="rgba(22,163,74,.10)"/>
+        </linearGradient>
+        <filter id="chartGlow" x="-50%" y="-50%" width="200%" height="200%">
+          <feGaussianBlur stdDeviation="3" result="blur"/>
+          <feMerge>
+            <feMergeNode in="blur"/>
+            <feMergeNode in="SourceGraphic"/>
+          </feMerge>
+        </filter>
+      </defs>
+      <rect x="0" y="0" width="${w}" height="${h}" fill="url(#bg)"/>
+      <path d="M0 ${h-10} L${w} ${h-10}" stroke="rgba(226,232,240,.25)" />
+      <g filter="url(#chartGlow)">${rects}</g>
+    </svg>
+  `;
+}
+
+/* ===== Render FLOAT CARDS ===== */
+function renderCards(){
+  clearCards();
+
+  for(const c of FLOAT_CARDS){
+    const el = document.createElement('div');
+    el.className = 'float-card';
+    el.style.left = (c.x/1000*100) + '%';
+    el.style.top  = (c.y/625*100) + '%';
+
+    el.innerHTML = `
+      <div class="title">${escapeHtml(c.title)}</div>
+      <div class="sub">${escapeHtml(c.sub)}</div>
+      <div class="divider"></div>
+      <div class="mini-chart">${miniChartSvg()}</div>
+      <div class="sub mt-2">Estado global · <span style="color:rgba(34,211,238,.9)">LIVE</span></div>
+    `;
+    cardsLayer.appendChild(el);
+  }
+}
+
+/* ===== Pins ===== */
+function createPin(d){
+  const el = document.createElement('div');
+  el.className = 'pin ' + pinClass(d.alert);
+  el.style.left = (norm01(d.x) * 100) + '%';
+  el.style.top  = (norm01(d.y) * 100) + '%';
+
+  el.innerHTML = `<div class="dot"></div>` + (d.alert === 'warn' ? `<div class="pulse"></div>` : '');
+
+  el.addEventListener('mouseenter', (ev)=>{
+    showTip(ev.clientX, ev.clientY, `
+      <strong>${escapeHtml(d.door_id)}</strong> · ${escapeHtml(d.name || '')}
+      <div style="color:#94a3b8">${escapeHtml(d.location || '')}</div>
+      <div style="color:#94a3b8">Estado: ${escapeHtml(alertLabel(d.alert))}</div>
+    `);
+  });
+  el.addEventListener('mouseleave', hideTip);
+
+  el.addEventListener('click', async ()=>{
+    selected = d;
+    renderSelected(d);
+    await reloadDoorEvents();
+  });
+
+  // Drag (solo editor)
+  if(ME?.can_edit){
+    let dragging = false;
+
+    el.addEventListener('mousedown', (e)=>{
+      if(!e.shiftKey) return;
+      dragging = true;
+      e.preventDefault();
+      e.stopPropagation();
+      el.style.cursor = 'grabbing';
+    });
+
+    window.addEventListener('mouseup', async ()=>{
+      if(!dragging) return;
+      dragging = false;
+      el.style.cursor = 'pointer';
+
+      const rect = surface.getBoundingClientRect();
+      const pinRect = el.getBoundingClientRect();
+      const cx = (pinRect.left + pinRect.width/2) - rect.left;
+      const cy = (pinRect.top + pinRect.height/2) - rect.top;
+
+      const x = cx / rect.width;
+      const y = cy / rect.height;
+
+      try{
+        await api('/api/doors/' + encodeURIComponent(d.door_id) + '/coords', {
+          method:'POST',
+          body: JSON.stringify({ x, y })
+        });
+        await reloadDoors();
+      }catch(err){
+        loadMsg.textContent = 'Error guardando coordenadas: ' + err.message;
+        await reloadDoors();
+      }
+    });
+
+    window.addEventListener('mousemove', (e)=>{
+      if(!dragging) return;
+      const rect = surface.getBoundingClientRect();
+      const x = (e.clientX - rect.left) / rect.width;
+      const y = (e.clientY - rect.top) / rect.height;
+      el.style.left = (norm01(x) * 100) + '%';
+      el.style.top  = (norm01(y) * 100) + '%';
+    });
+  }
+
+  return el;
+}
+
+function renderSelected(d){
+  const sub = document.getElementById('sel_sub');
+  const body = document.getElementById('sel_body');
+  const badge = document.getElementById('sel_alert');
+  const msg = document.getElementById('sel_msg');
+
+  msg.textContent = '';
+
+  if(!d){
+    sub.textContent = 'Ninguna seleccionada';
+    body.textContent = 'Click en un pin para ver detalles.';
+    badge.textContent = '—';
+    badge.className = 'badge badge-soft';
+    document.getElementById('btn_enable').style.display = 'none';
+    document.getElementById('btn_disable').style.display = 'none';
+    return;
+  }
+
+  sub.innerHTML = `<span class="badge bg-secondary">${escapeHtml(d.door_id)}</span> · ${escapeHtml(d.name || '(sin nombre)')}`;
+
+  body.innerHTML = `
+    <div class="muted">${escapeHtml(d.location || '')}</div>
+    <div class="mt-2">Estado: <strong>${d.is_enabled ? 'Habilitada' : 'Deshabilitada'}</strong></div>
+    <div class="mt-2 muted">
+      Último: ${d.last_ts ? escapeHtml(d.last_ts) : '—'}
+      <br/>Resultado: ${escapeHtml(d.last_result || '')}
+      <br/>Detalle: ${escapeHtml(d.last_details || '')}
+    </div>
+  `;
+
+  badge.textContent = alertLabel(d.alert);
+  badge.className = 'badge ' + alertBadgeClass(d.alert);
+
+  const isAdmin = (ME && ME.role === 'admin');
+  document.getElementById('btn_enable').style.display = isAdmin ? 'inline-block' : 'none';
+  document.getElementById('btn_disable').style.display = isAdmin ? 'inline-block' : 'none';
+}
+
+async function setDoorEnabled(v){
+  const msg = document.getElementById('sel_msg');
+  msg.textContent = '';
+  if(!selected) return;
+
+  if(!(ME && ME.role === 'admin')){
+    msg.textContent = 'Solo admin puede habilitar/deshabilitar.';
+    return;
+  }
+
+  try{
+    await api('/api/doors/' + encodeURIComponent(selected.door_id), {
+      method:'PUT',
+      body: JSON.stringify({
+        door_id: selected.door_id,
+        name: selected.name || '',
+        location: selected.location || '',
+        is_enabled: !!v
+      })
+    });
+    await reloadDoors();
+  }catch(e){
+    msg.textContent = 'Error: ' + e.message;
+  }
+}
+
+async function reloadDoorEvents(){
+  const tbody = document.getElementById('door_events_rows');
+  tbody.innerHTML = '';
+  if(!selected) return;
+
+  try{
+    const list = await api('/api/events?limit=30&door_id=' + encodeURIComponent(selected.door_id));
+    for(const e of list){
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${escapeHtml(e.ts ?? '')}</td>
+        <td>${escapeHtml(e.result ?? '')}</td>
+        <td>${escapeHtml(e.details ?? '')}</td>
+      `;
+      tbody.appendChild(tr);
+    }
+  }catch(err){
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td colspan="3" class="muted">Error cargando eventos</td>`;
+    tbody.appendChild(tr);
+  }
+}
+
+async function reloadDoors(){
+  loadMsg.textContent = '';
+  const list = await api('/api/doors/status');
+  DOORS = list;
+
+  clearPins();
+  for(const d of DOORS){
+    pinsLayer.appendChild(createPin(d));
+  }
+
+  if(selected){
+    const upd = DOORS.find(x=>x.door_id === selected.door_id);
+    if(upd){
+      selected = upd;
+      renderSelected(selected);
+      await reloadDoorEvents();
+    }
+  }
+}
+
+function applyToggles(){
+  const pinsOn = document.getElementById('togPins').checked;
+  const zonesOn = document.getElementById('togZones').checked;
+  const routesOn = document.getElementById('togRoutes').checked;
+  const cardsOn = document.getElementById('togCards').checked;
+
+  pinsLayer.style.display  = pinsOn ? 'block' : 'none';
+  zonesSvg.style.display   = zonesOn ? 'block' : 'none';
+  routesSvg.style.display  = routesOn ? 'block' : 'none';
+  cardsLayer.style.display = cardsOn ? 'block' : 'none';
+}
+
+async function reloadAll(){
+  try{
+    renderZones();
+    renderRoutes();
+    renderCards();
+    await reloadDoors();
+    applyToggles();
+    renderSelected(null);
+  }catch(e){
+    loadMsg.textContent = 'Error: ' + e.message;
+  }
+}
+
+/* ===== Parallax / tilt ===== */
+let baseRX = 58;
+let baseRZ = -16;
+let currentRX = baseRX;
+let currentRZ = baseRZ;
+
+document.getElementById('stage').addEventListener('mousemove', (e)=>{
+  const w = window.innerWidth, h = window.innerHeight;
+  const nx = (e.clientX / w) * 2 - 1;
+  const ny = (e.clientY / h) * 2 - 1;
+
+  currentRX = baseRX + (ny * -2.2);
+  currentRZ = baseRZ + (nx *  2.0);
+
+  applyTableTransform(currentRX, currentRZ);
+});
+
+/* Init */
+async function init(){
+  if(!token){
+    window.location='/login';
+    return;
+  }
+  await loadMe();
+  resetView();
+  await reloadAll();
+}
+
+init();
+setInterval(reloadDoors, 15000);
+</script>
+
+</body>
+</html>
