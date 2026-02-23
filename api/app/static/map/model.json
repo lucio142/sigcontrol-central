@@ -1,0 +1,66 @@
+{
+  "meta": { "version": 1, "name": "SigControl Plant Model" },
+
+  "zones": [
+    {
+      "id": "zona1",
+      "name": "Zona 1 (Vigilancia / Acceso)",
+      "color": "#0ea5e9",
+      "height": 0.12,
+      "poly": [[0.62,0.92],[0.92,0.92],[0.98,0.78],[0.80,0.62],[0.62,0.72]]
+    },
+    {
+      "id": "zona2",
+      "name": "Zona 2 (Centro / Patio)",
+      "color": "#22d3ee",
+      "height": 0.10,
+      "poly": [[0.34,0.72],[0.60,0.72],[0.68,0.54],[0.50,0.40],[0.30,0.48],[0.28,0.62]]
+    },
+    {
+      "id": "zona3",
+      "name": "Zona 3 (Clinker / Almacén)",
+      "color": "#60a5fa",
+      "height": 0.10,
+      "poly": [[0.05,0.58],[0.28,0.78],[0.46,0.66],[0.26,0.34],[0.06,0.38]]
+    },
+    {
+      "id": "zona4",
+      "name": "Zona 4 (Planta principal)",
+      "color": "#38bdf8",
+      "height": 0.12,
+      "poly": [[0.34,0.78],[0.74,0.76],[0.78,0.50],[0.56,0.28],[0.32,0.44]]
+    },
+    {
+      "id": "zona5",
+      "name": "Zona 5 (Harina cruda / Envase)",
+      "color": "#0ea5e9",
+      "height": 0.10,
+      "poly": [[0.68,0.32],[0.98,0.22],[0.92,0.02],[0.70,0.08]]
+    }
+  ],
+
+  "buildings": [
+    { "id":"B1", "name":"Caseta / Vigilancia", "color":"#8bd0ff", "height":0.35, "poly":[[0.87,0.86],[0.92,0.86],[0.92,0.80],[0.87,0.80]] },
+
+    { "id":"B2", "name":"Oficinas", "color":"#7dd3fc", "height":0.28, "poly":[[0.18,0.72],[0.26,0.72],[0.26,0.64],[0.18,0.64]] },
+    { "id":"B3", "name":"Taller Mecánico", "color":"#7dd3fc", "height":0.30, "poly":[[0.16,0.82],[0.24,0.82],[0.24,0.76],[0.16,0.76]] },
+    { "id":"B4", "name":"Almacén", "color":"#7dd3fc", "height":0.26, "poly":[[0.08,0.66],[0.16,0.66],[0.16,0.58],[0.08,0.58]] },
+    { "id":"B5", "name":"Laboratorio", "color":"#7dd3fc", "height":0.24, "poly":[[0.24,0.62],[0.30,0.62],[0.30,0.56],[0.24,0.56]] },
+    { "id":"B6", "name":"Estructura / Torre", "color":"#a5f3fc", "height":0.55, "poly":[[0.36,0.58],[0.40,0.58],[0.40,0.50],[0.36,0.50]] },
+
+    { "id":"B7", "name":"Planta principal", "color":"#93c5fd", "height":0.48, "poly":[[0.48,0.56],[0.62,0.56],[0.66,0.46],[0.58,0.36],[0.46,0.40]] },
+    { "id":"B8", "name":"Silos / Módulos", "color":"#a5f3fc", "height":0.34, "poly":[[0.62,0.52],[0.68,0.52],[0.68,0.46],[0.62,0.46]] },
+    { "id":"B9", "name":"Silos / Módulos", "color":"#a5f3fc", "height":0.34, "poly":[[0.68,0.50],[0.73,0.50],[0.73,0.44],[0.68,0.44]] },
+    { "id":"B10", "name":"Edificio auxiliar", "color":"#93c5fd", "height":0.30, "poly":[[0.72,0.56],[0.78,0.56],[0.78,0.48],[0.72,0.48]] },
+    { "id":"B11", "name":"Módulo superior", "color":"#93c5fd", "height":0.26, "poly":[[0.52,0.30],[0.58,0.30],[0.58,0.24],[0.52,0.24]] },
+
+    { "id":"C1", "name":"Tanques combustibles", "color":"#fde68a", "height":0.22, "poly":[[0.62,0.66],[0.66,0.66],[0.66,0.62],[0.62,0.62]] },
+    { "id":"C2", "name":"Tanques combustibles", "color":"#fde68a", "height":0.22, "poly":[[0.67,0.68],[0.71,0.68],[0.71,0.64],[0.67,0.64]] },
+
+    { "id":"E1", "name":"Envase (principal)", "color":"#86efac", "height":0.42, "poly":[[0.80,0.24],[0.92,0.22],[0.90,0.10],[0.78,0.12]] },
+    { "id":"E2", "name":"Envase (aux)", "color":"#86efac", "height":0.26, "poly":[[0.90,0.30],[0.96,0.30],[0.96,0.24],[0.90,0.24]] },
+
+    { "id":"R1", "name":"Corredor / Banda", "color":"#fca5a5", "height":0.18, "poly":[[0.48,0.62],[0.56,0.62],[0.64,0.76],[0.56,0.78]] },
+    { "id":"R2", "name":"Tramo acceso", "color":"#fca5a5", "height":0.16, "poly":[[0.74,0.84],[0.78,0.84],[0.88,0.70],[0.84,0.68]] }
+  ]
+}
