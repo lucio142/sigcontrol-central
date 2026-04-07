@@ -18,12 +18,7 @@
     }
     body{ margin:0; background:var(--hc-bg); overflow:hidden; }
     .hc-nav{ background: linear-gradient(90deg, var(--hc-blue), var(--hc-green)); }
-
-    #stage{
-      width:100%;
-      height: calc(100vh - 56px);
-      position:relative;
-    }
+    #stage{ width:100%; height: calc(100vh - 56px); position:relative; }
     canvas{ display:block; }
 
     .panel{
@@ -36,38 +31,32 @@
       backdrop-filter: blur(10px);
     }
     .muted{ color:var(--hc-muted); font-size:.85rem; }
-    .hud{ position:absolute; top:14px; left:14px; z-index:10; width: 420px; }
-    .right{ position:absolute; top:14px; right:14px; z-index:10; width: 420px; }
+    .hud { position:absolute; top:14px; left:14px;  z-index:10; width:360px; }
+    .right{ position:absolute; top:14px; right:14px; z-index:10; width:420px; }
 
-    #err{
-      margin-top:10px;
-      color:#fbbf24;
-      font-size:.9rem;
-      white-space:pre-wrap;
-    }
-
+    #err{ margin-top:10px; color:#fbbf24; font-size:.9rem; white-space:pre-wrap; }
     #dbg{
-      position:absolute;
-      left:14px;
-      bottom:14px;
-      z-index:11;
-      background: rgba(0,0,0,.35);
-      border: 1px solid rgba(148,163,184,.22);
-      color: #e2e8f0;
-      padding: 8px 10px;
-      border-radius: 12px;
-      font: 12px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-      backdrop-filter: blur(8px);
-      max-width: min(780px, calc(100% - 28px));
-      white-space:pre-wrap;
+      position:absolute; left:14px; bottom:14px; z-index:11;
+      background:rgba(0,0,0,.35); border:1px solid rgba(148,163,184,.22);
+      color:#e2e8f0; padding:8px 10px; border-radius:12px;
+      font:12px ui-monospace,monospace; backdrop-filter:blur(8px);
+      max-width:min(780px,calc(100% - 28px)); white-space:pre-wrap;
     }
-    .btn-mini{ padding: 6px 10px; }
-    .kbd{
-      display:inline-block; padding:2px 7px; border-radius:8px;
-      border:1px solid rgba(255,255,255,.18);
-      background:rgba(255,255,255,.06);
-      font-size:.82rem;
-      margin:0 2px;
+
+    .legend{ display:flex; flex-wrap:wrap; gap:8px; margin-top:8px; }
+    .legend-item{ display:flex; align-items:center; gap:5px; font-size:.78rem; color:var(--hc-muted); }
+    .legend-dot{ width:10px; height:10px; border-radius:50%; }
+
+    /* modo posicionamiento */
+    #stage.placing{ cursor:crosshair !important; }
+    #place_banner{
+      display:none;
+      position:absolute; bottom:60px; left:50%; transform:translateX(-50%);
+      z-index:20; background:#0b5ed7; color:#fff;
+      padding:10px 22px; border-radius:12px;
+      font-size:.95rem; font-weight:600;
+      box-shadow:0 4px 20px rgba(0,0,0,.5);
+      pointer-events:none;
     }
   </style>
 </head>
@@ -81,52 +70,51 @@
 </nav>
 
 <div id="stage">
+
+  <!-- Banner modo posicionamiento -->
+  <div id="place_banner">📍 Haz click en el mapa para colocar la puerta</div>
+
+  <!-- Panel izquierdo -->
   <div class="hud">
     <div class="panel">
       <div class="d-flex justify-content-between align-items-start">
         <div>
           <div class="fw-semibold">Control</div>
-          <div class="muted">Rotar · Zoom · Click (cuando editor ON) para trazar edificios</div>
+          <div class="muted">Rotar · Zoom · Click para seleccionar</div>
         </div>
         <span id="role_badge" class="badge" style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);">...</span>
       </div>
 
-      <div class="d-flex gap-2 mt-2 flex-wrap">
-        <button class="btn btn-sm btn-outline-light btn-mini" id="btn_reset">Reset vista</button>
-        <button class="btn btn-sm btn-outline-light btn-mini" id="btn_reload">Recargar</button>
-        <button class="btn btn-sm btn-outline-success btn-mini" id="btn_editor">Editor: OFF</button>
-        <button class="btn btn-sm btn-outline-light btn-mini" id="btn_export">Exportar model.json</button>
-        <button class="btn btn-sm btn-outline-light btn-mini" id="btn_copy">Copiar JSON</button>
-        <button class="btn btn-sm btn-outline-danger btn-mini" id="btn_clear">Borrar edificios</button>
+      <div class="d-flex gap-2 mt-2">
+        <button class="btn btn-sm btn-outline-light" id="btn_reset">Reset vista</button>
+        <button class="btn btn-sm btn-outline-light" id="btn_reload">Recargar</button>
+      </div>
+      <div class="muted mt-2">Tip: <b>G</b> = Grid · <b>D</b> = Puertas · <b>Esc</b> = Cancelar</div>
+
+      <!-- Posicionar puerta desde panel -->
+      <div id="place_box" style="display:none; margin-top:10px; border-top:1px solid var(--hc-border); padding-top:10px;">
+        <div class="muted mb-1">Posicionar puerta en el mapa:</div>
+        <select id="place_door_sel" class="form-select form-select-sm mb-2" style="background:#0f172a;color:#e2e8f0;border-color:var(--hc-border)"></select>
+        <button class="btn btn-sm btn-primary w-100" id="btn_start_place">📍 Activar modo posicionamiento</button>
       </div>
 
-      <div class="mt-3">
-        <div class="fw-semibold">Editor de edificios (normalizado 0..1)</div>
-        <div class="muted mt-1">
-          <span class="kbd">E</span> editor on/off ·
-          <span class="kbd">Click</span> agrega punto ·
-          <span class="kbd">Z</span> deshacer ·
-          <span class="kbd">Enter</span> cerrar/guardar ·
-          <span class="kbd">Esc</span> cancelar ·
-          <span class="kbd">G</span> grid
-        </div>
-        <div id="editor_status" class="muted mt-2">Estado: Editor OFF · Puntos actuales: 0 · Edificios: 0</div>
-        <div id="err"></div>
+      <div class="legend mt-2">
+        <div class="legend-item"><div class="legend-dot" style="background:#22c55e"></div>OK</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#eab308"></div>Alerta</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#ef4444"></div>Deshabilitada</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#f97316"></div>Sin datos</div>
       </div>
+
+      <div id="err"></div>
     </div>
   </div>
 
+  <!-- Panel derecho: selección -->
   <div class="right">
     <div class="panel">
       <div class="fw-semibold">Selección</div>
       <div id="sel_sub" class="muted">Nada seleccionado</div>
-      <div id="sel_body" class="muted mt-2">Tip: doble click sobre un edificio para ver datos.</div>
-      <hr style="border-color: rgba(148,163,184,.2);" />
-      <div class="fw-semibold">Notas</div>
-      <div class="muted mt-2">
-        1) Traza un edificio con puntos y presiona <b>Enter</b> para guardarlo.<br/>
-        2) Presiona <b>Exportar model.json</b> y reemplaza tu archivo en <span style="color:#f472b6">/static/map/model.json</span>.
-      </div>
+      <div id="sel_body" class="muted mt-2">Click sobre un edificio o puerta.</div>
     </div>
   </div>
 
@@ -146,94 +134,77 @@
   import * as THREE from "three";
   import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 
-  const errBox = document.getElementById("err");
-  const dbg = document.getElementById("dbg");
-  const stage = document.getElementById("stage");
+  const errBox  = document.getElementById("err");
+  const dbgEl   = document.getElementById("dbg");
+  const stage   = document.getElementById("stage");
+  const selSub  = document.getElementById("sel_sub");
+  const selBody = document.getElementById("sel_body");
+  const banner  = document.getElementById("place_banner");
 
-  function setErr(msg){ errBox.textContent = msg || ""; }
-  function setDbg(msg){ dbg.textContent = msg || ""; }
+  function setErr(m){ errBox.textContent = m || ""; }
+  function setDbg(m){ dbgEl.textContent  = m || ""; }
 
   const token = sessionStorage.getItem("token");
   if(!token){ window.location = "/login"; }
 
-  async function api(url, options={}){
-    options.headers = options.headers || {};
-    options.headers["Authorization"] = "Bearer " + token;
-    if(options.body && !options.headers["Content-Type"]){
-      options.headers["Content-Type"] = "application/json";
-    }
-    const r = await fetch(url, options);
-    const ct = r.headers.get("content-type") || "";
-    if(!r.ok){
-      const t = await r.text().catch(()=> "");
-      if((t || "").includes("Invalid token") || r.status === 401){
-        sessionStorage.removeItem("token");
-        window.location = "/login";
-        return;
-      }
-      throw new Error(t || ("HTTP " + r.status));
-    }
+  async function api(url, opts={}){
+    opts.headers = opts.headers || {};
+    opts.headers["Authorization"] = "Bearer " + token;
+    const method = (opts.method || "GET").toUpperCase();
+    if(["POST","PUT","PATCH"].includes(method))
+      opts.headers["Content-Type"] = "application/json";
+    const r = await fetch(url, opts);
+    if(r.status === 401){ sessionStorage.removeItem("token"); window.location="/login"; return; }
+    if(!r.ok){ const t = await r.text().catch(()=>""); throw new Error(t||"HTTP "+r.status); }
+    const ct = r.headers.get("content-type")||"";
     return ct.includes("application/json") ? r.json() : r.text();
   }
 
   let ME = null;
   async function loadMe(){
     ME = await api("/api/auth/me");
-    document.getElementById("role_badge").textContent = `${ME.role}${ME.can_edit ? " (editor)" : ""}`;
+    document.getElementById("role_badge").textContent = `${ME.role}${ME.can_edit?" (editor)":""}`;
+    // mostrar selector de posicionamiento solo si puede editar
+    if(ME.can_edit){
+      document.getElementById("place_box").style.display = "block";
+    }
   }
 
-  // ========= ESCENA =========
-  const renderer = new THREE.WebGLRenderer({ antialias:true, alpha:false });
-  renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+  // ========= RENDERER =========
+  const renderer = new THREE.WebGLRenderer({ antialias:true });
+  renderer.setPixelRatio(Math.min(devicePixelRatio,2));
   renderer.setSize(stage.clientWidth, stage.clientHeight);
-  renderer.setClearColor(0x07101f, 1);
+  renderer.setClearColor(0x07101f,1);
   stage.appendChild(renderer.domElement);
 
-  const scene = new THREE.Scene();
-  scene.fog = new THREE.Fog(0x07101f, 10, 40);
+  const scene  = new THREE.Scene();
+  scene.fog    = new THREE.Fog(0x07101f,10,40);
 
   const camera = new THREE.PerspectiveCamera(35, stage.clientWidth/stage.clientHeight, 0.01, 200);
-  camera.position.set(9, 10, 9);
+  camera.position.set(9,10,9);
 
   const controls = new OrbitControls(camera, renderer.domElement);
   controls.enableDamping = true;
   controls.dampingFactor = 0.08;
-  controls.minDistance = 4;
-  controls.maxDistance = 28;
-  controls.maxPolarAngle = Math.PI * 0.42;
-  controls.minPolarAngle = Math.PI * 0.18;
+  controls.minDistance   = 4;
+  controls.maxDistance   = 28;
+  controls.maxPolarAngle = Math.PI*0.42;
+  controls.minPolarAngle = Math.PI*0.18;
   controls.target.set(0,0,0);
   controls.update();
 
   scene.add(new THREE.HemisphereLight(0x93c5fd, 0x07101f, 0.55));
-  const dir = new THREE.DirectionalLight(0xffffff, 0.55);
-  dir.position.set(8, 12, 6);
+  const dir = new THREE.DirectionalLight(0xffffff,0.55);
+  dir.position.set(8,12,6);
   scene.add(dir);
 
   // ========= MAPA =========
   const FLOOR_W = 14, FLOOR_H = 9;
+  const MAP_T   = { rotZ:0.0, scaleX:1.0, scaleZ:1.0, offsetNX:-0.05, offsetNY:-0.05 };
 
-  // ✅ Calibración NORMALIZADA (0..1)
-  // Tu calibración final:
-  // { rotZ:0, scaleX:1, scaleZ:1, offsetX:-0.05, offsetZ:-0.05 }  (mundo)
-  // aquí: offsetNX=-0.05 , offsetNY=-0.05 (normalizado)
-  const MAP_T = {
-    rotZ: 0.0,
-    scaleX: 1.0,
-    scaleZ: 1.0,
-    offsetNX: -0.05,
-    offsetNY: -0.05
-  };
-
-  const MAP_IMG = {
-    url: "/static/img/planta.png",
-    opacity: 0.85
-  };
-
-  // Piso oscuro
   const floor = new THREE.Mesh(
     new THREE.PlaneGeometry(FLOOR_W, FLOOR_H),
-    new THREE.MeshStandardMaterial({ color:0x050b14, roughness:1.0, metalness:0.0 })
+    new THREE.MeshStandardMaterial({ color:0x050b14, roughness:1.0 })
   );
   floor.rotation.x = -Math.PI/2;
   scene.add(floor);
@@ -241,104 +212,68 @@
   const grid = new THREE.GridHelper(FLOOR_W, 60, 0x00e5ff, 0x00b3ff);
   grid.position.y = 0.001;
   grid.material.transparent = true;
-  grid.material.opacity = 0.25;
+  grid.material.opacity     = 0.25;
   scene.add(grid);
 
-  // “Root” del mapa: TODO lo que dibujes debe ser hijo de mapRoot
-  // ✅ (imagen + preview + edificios) -> cero desfase
   const mapRoot = new THREE.Group();
   mapRoot.position.y = 0.0006;
   scene.add(mapRoot);
 
   function applyMapTransform(){
-    // ⚠️ rotZ del usuario es en Z, pero el plano está en XZ.
-    // Para rotarlo “como imagen en el piso”, se rota en Y.
     mapRoot.rotation.y = MAP_T.rotZ;
-    mapRoot.scale.set(MAP_T.scaleX, 1, MAP_T.scaleZ);
-
-    // offset normalizado → mundo/local:
-    // nx shift: +offsetNX mueve en X
-    // ny shift: +offsetNY mueve en Z (con signo invertido por convención 0 arriba)
-    const dx = MAP_T.offsetNX * FLOOR_W;
-    const dz = -MAP_T.offsetNY * FLOOR_H;
-    mapRoot.position.x = dx;
-    mapRoot.position.z = dz;
+    mapRoot.scale.set(MAP_T.scaleX,1,MAP_T.scaleZ);
+    mapRoot.position.x = MAP_T.offsetNX * FLOOR_W;
+    mapRoot.position.z = -MAP_T.offsetNY * FLOOR_H;
   }
   applyMapTransform();
 
-  // Base map (imagen)
+  // plano invisible para detectar clicks en el suelo
+  const groundPlane = new THREE.Mesh(
+    new THREE.PlaneGeometry(FLOOR_W*2, FLOOR_H*2),
+    new THREE.MeshBasicMaterial({ visible:false, side:THREE.DoubleSide })
+  );
+  groundPlane.rotation.x = -Math.PI/2;
+  groundPlane.position.y = 0.001;
+  mapRoot.add(groundPlane);
+
   let baseMapMesh = null;
-
   async function loadBaseMap(){
-    if(baseMapMesh){
-      baseMapMesh.material.map?.dispose?.();
-      baseMapMesh.material.dispose?.();
-      baseMapMesh.geometry.dispose?.();
-      mapRoot.remove(baseMapMesh);
-      baseMapMesh = null;
-    }
-
-    const tex = await new THREE.TextureLoader().loadAsync(MAP_IMG.url);
+    if(baseMapMesh){ baseMapMesh.material.map?.dispose(); baseMapMesh.material.dispose(); baseMapMesh.geometry.dispose(); mapRoot.remove(baseMapMesh); baseMapMesh=null; }
+    const tex = await new THREE.TextureLoader().loadAsync("/static/img/planta.png");
     tex.colorSpace = THREE.SRGBColorSpace;
     tex.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
-
-    const mat = new THREE.MeshBasicMaterial({
-      map: tex,
-      transparent: true,
-      opacity: MAP_IMG.opacity
-    });
-
-    baseMapMesh = new THREE.Mesh(new THREE.PlaneGeometry(FLOOR_W, FLOOR_H), mat);
-    baseMapMesh.rotation.x = -Math.PI/2;     // XZ
-    baseMapMesh.position.y = 0.0002;
-    baseMapMesh.renderOrder = 0;
-    // para asegurar UV estables en picking:
-    baseMapMesh.material.side = THREE.DoubleSide;
-
+    baseMapMesh = new THREE.Mesh(
+      new THREE.PlaneGeometry(FLOOR_W, FLOOR_H),
+      new THREE.MeshBasicMaterial({ map:tex, transparent:true, opacity:0.85 })
+    );
+    baseMapMesh.rotation.x  = -Math.PI/2;
+    baseMapMesh.position.y  = 0.0002;
     mapRoot.add(baseMapMesh);
   }
 
-  // ========= UTIL: norm <-> local (dentro del mapa, ANTES de transform) =========
+  // conversión local <-> normalizado
   function normToLocal(nx, ny){
-    const x = (nx - 0.5) * FLOOR_W;
-    const z = (0.5 - ny) * FLOOR_H;
-    return new THREE.Vector3(x, 0.02, z);
+    return new THREE.Vector3((nx-0.5)*FLOOR_W, 0, (0.5-ny)*FLOOR_H);
   }
-
-  // ========= EDIFICIOS =========
-  const buildingsGroup = new THREE.Group();
-  buildingsGroup.position.y = 0.0;
-  mapRoot.add(buildingsGroup);
-
-  function hexColor(str){
-    return Number("0x" + (str || "#38bdf8").replace("#",""));
+  function localToNorm(lx, lz){
+    return { nx: lx/FLOOR_W + 0.5, ny: 0.5 - lz/FLOOR_H };
   }
 
   function clearGroup(g){
     while(g.children.length){
-      const c = g.children.pop();
-      if(c.geometry) c.geometry.dispose?.();
-      if(c.material){
-        if(Array.isArray(c.material)) c.material.forEach(m=>m.dispose?.());
-        else c.material.dispose?.();
-      }
-      if(c.children && c.children.length){
-        for(const ch of c.children){
-          if(ch.geometry) ch.geometry.dispose?.();
-          if(ch.material){
-            if(Array.isArray(ch.material)) ch.material.forEach(m=>m.dispose?.());
-            else ch.material.dispose?.();
-          }
-        }
-      }
+      const c = g.children[0];
+      c.traverse(o=>{ o.geometry?.dispose(); (Array.isArray(o.material)?o.material:[o.material]).forEach(m=>m?.dispose()); });
       g.remove(c);
     }
   }
 
-  function makeHoloBuilding(polyNorm, height=0.35, colorHex=0x38bdf8){
-    if(!polyNorm || polyNorm.length < 3) return null;
+  // ========= EDIFICIOS =========
+  const buildingsGroup = new THREE.Group();
+  mapRoot.add(buildingsGroup);
 
-    const p0 = normToLocal(polyNorm[0][0], polyNorm[0][1]);
+  function makeHoloBuilding(polyNorm, height=0.35, colorHex=0x38bdf8){
+    if(!polyNorm||polyNorm.length<3) return null;
+    const p0    = normToLocal(polyNorm[0][0], polyNorm[0][1]);
     const shape = new THREE.Shape();
     shape.moveTo(p0.x, p0.z);
     for(let i=1;i<polyNorm.length;i++){
@@ -346,372 +281,327 @@
       shape.lineTo(p.x, p.z);
     }
     shape.lineTo(p0.x, p0.z);
-
-    const h = Math.max(0.06, Number(height || 0.35));
-    const geo = new THREE.ExtrudeGeometry(shape, { depth: h, bevelEnabled:false });
-    geo.rotateX(-Math.PI/2); // depth → Y
-    geo.translate(0, 0.03, 0);
-
-    const c = new THREE.Color(colorHex);
-
-    const fill = new THREE.MeshStandardMaterial({
-      color: c,
-      transparent: true,
-      opacity: 0.20,
-      roughness: 0.12,
-      metalness: 0.10,
-      emissive: c,
-      emissiveIntensity: 0.55
-    });
-
-    const wire = new THREE.MeshBasicMaterial({
-      color: c,
-      wireframe: true,
-      transparent: true,
-      opacity: 0.30,
-      blending: THREE.AdditiveBlending,
-      depthWrite: false
-    });
-
-    const edgeMat = new THREE.LineBasicMaterial({
-      color: c,
-      transparent: true,
-      opacity: 0.95,
-      blending: THREE.AdditiveBlending,
-      depthWrite: false
-    });
-
+    const h   = Math.max(0.06, Number(height||0.35));
+    const geo = new THREE.ExtrudeGeometry(shape,{depth:h,bevelEnabled:false});
+    geo.rotateX(-Math.PI/2); geo.translate(0,0.03,0);
+    const c    = new THREE.Color(colorHex);
+    const fill = new THREE.MeshStandardMaterial({color:c,transparent:true,opacity:0.20,roughness:0.12,emissive:c,emissiveIntensity:0.55});
+    const wire = new THREE.MeshBasicMaterial({color:c,wireframe:true,transparent:true,opacity:0.30,blending:THREE.AdditiveBlending,depthWrite:false});
+    const edgeMat = new THREE.LineBasicMaterial({color:c,transparent:true,opacity:0.95,blending:THREE.AdditiveBlending,depthWrite:false});
     const g = new THREE.Group();
-    g.add(new THREE.Mesh(geo, fill));
-    g.add(new THREE.Mesh(geo, wire));
-    g.add(new THREE.LineSegments(new THREE.EdgesGeometry(geo), edgeMat));
+    const fillMesh=new THREE.Mesh(geo,fill), wireMesh=new THREE.Mesh(geo,wire), edges=new THREE.LineSegments(new THREE.EdgesGeometry(geo),edgeMat);
+    g.add(fillMesh,wireMesh,edges);
+    g.userData._parts={fillMesh,wireMesh,edges};
     return g;
   }
 
-  // ========= MODELO EN MEMORIA =========
-  let MODEL = { meta:{version:1, name:"SigControl Plant Model"}, buildings:[] };
-
+  let MODEL = {meta:{},buildings:[]};
   async function loadModel(){
     clearGroup(buildingsGroup);
-
-    const r = await fetch("/static/map/model.json", { cache:"no-store" });
-    if(r.ok){
-      const cfg = await r.json();
-      MODEL.meta = cfg.meta || MODEL.meta;
-      MODEL.buildings = Array.isArray(cfg.buildings) ? cfg.buildings : [];
-    }else{
-      MODEL.buildings = [];
-    }
-
+    const r = await fetch("/static/map/model.json",{cache:"no-store"});
+    if(!r.ok) throw new Error("No pude cargar model.json");
+    const cfg = await r.json();
+    MODEL.buildings = Array.isArray(cfg.buildings)?cfg.buildings:[];
+    MODEL.meta      = cfg.meta||{};
     for(const b of MODEL.buildings){
-      const mesh = makeHoloBuilding(b.poly, b.height, hexColor(b.color || "#38bdf8"));
-      if(mesh){
-        mesh.userData = { kind:"building", item:b };
-        buildingsGroup.add(mesh);
-      }
+      const mesh = makeHoloBuilding(b.poly,b.height,Number("0x"+(b.color||"#38bdf8").replace("#","")));
+      if(mesh){ mesh.userData.kind="building"; mesh.userData.item=b; buildingsGroup.add(mesh); }
     }
   }
 
-  // ========= EDITOR (CLICK -> UV) =========
-  let EDITOR_ON = false;
-  let currentPts = []; // {nx, ny}
+  // ========= MARCADORES DE PUERTAS =========
+  const ALERT_COLORS = { ok:0x22c55e, warn:0xeab308, disabled:0xef4444, stale:0xf97316 };
+  const doorsGroup   = new THREE.Group();
+  doorsGroup.position.y = 0.05;
+  mapRoot.add(doorsGroup);
 
-  // ✅ Preview también vive en mapRoot (MISMO sistema que la imagen)
-  let previewLine = null;
-  const previewPtsGroup = new THREE.Group();
-  previewPtsGroup.renderOrder = 999;
-  mapRoot.add(previewPtsGroup);
+  function makeDoorMarker(ds){
+    const color  = ALERT_COLORS[ds.alert] ?? 0x94a3b8;
+    const c      = new THREE.Color(color);
+    const g      = new THREE.Group();
 
-  const editorStatus = document.getElementById("editor_status");
-  const selSub = document.getElementById("sel_sub");
-  const selBody = document.getElementById("sel_body");
+    const sphere = new THREE.Mesh(
+      new THREE.SphereGeometry(0.12,12,12),
+      new THREE.MeshStandardMaterial({color:c,emissive:c,emissiveIntensity:0.8,transparent:true,opacity:0.92})
+    );
+    sphere.position.y = 0.35;
+    g.add(sphere);
 
-  function updateEditorStatus(){
-    editorStatus.textContent =
-      `Estado: Editor ${EDITOR_ON ? "ON" : "OFF"} · Puntos actuales: ${currentPts.length} · Edificios: ${MODEL.buildings.length}`;
-    document.getElementById("btn_editor").textContent = `Editor: ${EDITOR_ON ? "ON" : "OFF"}`;
+    const post = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.015,0.015,0.35,6),
+      new THREE.MeshBasicMaterial({color:c,transparent:true,opacity:0.6})
+    );
+    post.position.y = 0.175;
+    g.add(post);
+
+    const ring = new THREE.Mesh(
+      new THREE.RingGeometry(0.14,0.20,20),
+      new THREE.MeshBasicMaterial({color:c,side:THREE.DoubleSide,transparent:true,opacity:0.5,blending:THREE.AdditiveBlending,depthWrite:false})
+    );
+    ring.rotation.x = -Math.PI/2;
+    ring.position.y = 0.01;
+    g.add(ring);
+
+    const pos = normToLocal(ds.x, ds.y);
+    g.position.set(pos.x, 0, pos.z);
+
+    g.userData.kind    = "door";
+    g.userData.item    = ds;
+    g.userData._sphere = sphere;
+    g.userData._ring   = ring;
+
+    return g;
   }
 
-  // ✅ Materiales de preview (sin depthTest para que no se “corra” visualmente)
-  const PREVIEW_Y = 0.060;
-  const dotGeo = new THREE.SphereGeometry(0.018, 8, 8);
-  const dotMat = new THREE.MeshBasicMaterial({
-    color:0xFFD000,
-    transparent:true,
-    opacity:0.95,
-    depthTest:false,
-    depthWrite:false
-  });
+  let DOORS_STATUS = [];
 
-  function rebuildPreview(){
-    // limpiar pts
-    clearGroup(previewPtsGroup);
+  async function loadDoorsStatus(){
+    try{
+      DOORS_STATUS = await api("/api/doors/status");
+      clearGroup(doorsGroup);
+      for(const d of DOORS_STATUS) doorsGroup.add(makeDoorMarker(d));
 
-    // limpiar línea
-    if(previewLine){
-      previewLine.geometry.dispose?.();
-      previewLine.material.dispose?.();
-      mapRoot.remove(previewLine); // ✅ mapRoot, no scene
-      previewLine = null;
-    }
-
-    if(currentPts.length < 1) return;
-
-    // puntos pequeños
-    for(const p of currentPts){
-      const m = new THREE.Mesh(dotGeo, dotMat);
-      const v = normToLocal(p.nx, p.ny);
-      m.position.copy(v);
-      m.position.y = PREVIEW_Y;
-      m.renderOrder = 1001;
-      previewPtsGroup.add(m);
-    }
-
-    // línea (cerrada para ayudar al trazo)
-    const pts = currentPts.map(p => {
-      const v = normToLocal(p.nx, p.ny);
-      v.y = PREVIEW_Y;
-      return v;
-    });
-
-    if(pts.length >= 2){
-      pts.push(pts[0].clone());
-    }
-
-    const geo = new THREE.BufferGeometry().setFromPoints(pts);
-    const mat = new THREE.LineBasicMaterial({
-      color:0xFFD000,
-      transparent:true,
-      opacity:0.95,
-      depthTest:false,
-      depthWrite:false
-    });
-
-    previewLine = new THREE.Line(geo, mat);
-    previewLine.renderOrder = 1000;
-    mapRoot.add(previewLine);
-  }
-
-  function undoPoint(){
-    if(currentPts.length){
-      currentPts.pop();
-      rebuildPreview();
-      updateEditorStatus();
+      // actualizar selector del panel
+      const sel = document.getElementById("place_door_sel");
+      sel.innerHTML = DOORS_STATUS.map(d=>
+        `<option value="${d.door_id}">${d.door_id} — ${d.name||"sin nombre"} (x:${d.x.toFixed(2)} y:${d.y.toFixed(2)})</option>`
+      ).join("");
+    }catch(e){
+      setErr("Error al cargar puertas: " + e.message);
     }
   }
 
-  function cancelTrace(){
-    currentPts = [];
-    rebuildPreview();
-    setErr("");
-    updateEditorStatus();
+  // ========= MODO POSICIONAMIENTO =========
+  let placingDoor = null;  // door_id que se está posicionando
+
+  function startPlacing(door_id){
+    placingDoor = door_id;
+    stage.classList.add("placing");
+    controls.enabled = false;   // deshabilita órbita para no interferir con el click
+    banner.style.display = "block";
+    banner.textContent   = `📍 Click en el mapa para colocar "${door_id}" — Esc para cancelar`;
+    selSub.textContent   = `Posicionando: ${door_id}`;
+    selBody.textContent  = "Haz click en cualquier punto del mapa.";
   }
 
-  function saveBuilding(){
-    if(currentPts.length < 3){
-      setErr("Necesitas mínimo 3 puntos.");
-      return;
-    }
-
-    const poly = currentPts.map(p => [Number(p.nx.toFixed(6)), Number(p.ny.toFixed(6))]);
-
-    const id = "B" + (MODEL.buildings.length + 1);
-    const b = {
-      id,
-      name: id,
-      color: "#38bdf8",
-      height: 0.35,
-      poly
-    };
-    MODEL.buildings.push(b);
-
-    const mesh = makeHoloBuilding(b.poly, b.height, hexColor(b.color));
-    if(mesh){
-      mesh.userData = { kind:"building", item:b };
-      buildingsGroup.add(mesh);
-    }
-
-    cancelTrace();
-    setErr(`✅ Guardado: ${id} (${poly.length} puntos)`);
-    updateEditorStatus();
+  function stopPlacing(){
+    placingDoor = null;
+    stage.classList.remove("placing");
+    controls.enabled     = true;
+    banner.style.display = "none";
   }
 
-  // ========= PICKING =========
-  const ray = new THREE.Raycaster();
+  document.getElementById("btn_start_place").onclick = ()=>{
+    const sel     = document.getElementById("place_door_sel");
+    const door_id = sel.value;
+    if(!door_id){ alert("Selecciona una puerta primero."); return; }
+    startPlacing(door_id);
+  };
+
+  // ========= RAYCASTER =========
+  const ray   = new THREE.Raycaster();
   const mouse = new THREE.Vector2();
 
   function setMouse(e){
     const rect = renderer.domElement.getBoundingClientRect();
-    mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
-    mouse.y = -(((e.clientY - rect.top) / rect.height) * 2 - 1);
+    mouse.x =  ((e.clientX-rect.left)/rect.width )*2-1;
+    mouse.y = -(((e.clientY-rect.top )/rect.height)*2-1);
   }
 
-  renderer.domElement.addEventListener("click", (e)=>{
-    if(!EDITOR_ON) return;
-    if(!baseMapMesh) return;
+  function findRoot(obj, kind){
+    let o = obj;
+    while(o){ if(o.userData?.kind===kind) return o; o=o.parent; }
+    return null;
+  }
 
+  renderer.domElement.addEventListener("click", async (e)=>{
     setMouse(e);
     ray.setFromCamera(mouse, camera);
 
-    // ✅ SIEMPRE contra el plano del mapa -> uv perfecto
-    const hits = ray.intersectObject(baseMapMesh, false);
-    if(!hits.length) return;
+    // ---- MODO POSICIONAMIENTO ----
+    if(placingDoor){
+      const hits = ray.intersectObject(groundPlane);
+      if(!hits.length) return;
 
-    const uv = hits[0].uv;
-    if(!uv) return;
+      // hit.point está en world space; necesitamos convertir a espacio de mapRoot
+      const worldPt  = hits[0].point;
+      const localPt  = mapRoot.worldToLocal(worldPt.clone());
+      const { nx, ny } = localToNorm(localPt.x, localPt.z);
 
-    const nx = uv.x;
-    const ny = 1.0 - uv.y; // invertir Y
+      // clamp 0..1
+      const cx = Math.max(0, Math.min(1, nx));
+      const cy = Math.max(0, Math.min(1, ny));
 
-    currentPts.push({ nx, ny });
-    rebuildPreview();
-    updateEditorStatus();
-  });
-
-  // seleccionar edificio (para info)
-  renderer.domElement.addEventListener("dblclick", (e)=>{
-    setMouse(e);
-    ray.setFromCamera(mouse, camera);
-    const hits = ray.intersectObjects(buildingsGroup.children, true);
-    if(!hits.length){
-      selSub.textContent = "Nada seleccionado";
-      selBody.textContent = "Tip: doble click sobre un edificio para ver datos.";
+      try{
+        await api(`/api/doors/${encodeURIComponent(placingDoor)}/coords`,{
+          method:"POST",
+          body: JSON.stringify({ x: cx, y: cy })
+        });
+        stopPlacing();
+        await loadDoorsStatus();   // refresca marcadores
+        selSub.textContent  = `✅ Puerta "${placingDoor}" posicionada`;
+        selBody.innerHTML   = `<div class="muted">Coordenadas: x=${cx.toFixed(3)} y=${cy.toFixed(3)}</div>`;
+      }catch(err){
+        setErr("Error al guardar posición: " + err.message);
+        stopPlacing();
+      }
       return;
     }
-    let o = hits[0].object;
-    while(o && !o.userData?.item) o = o.parent;
-    const b = o?.userData?.item;
-    if(!b) return;
 
-    selSub.textContent = `${b.id} · ${b.name || ""}`;
-    selBody.innerHTML = `
-      <div class="muted">Color: <b>${b.color || ""}</b></div>
-      <div class="muted">Altura: <b>${b.height ?? ""}</b></div>
+    // ---- SELECCIÓN NORMAL ----
+    const doorHits = ray.intersectObjects(doorsGroup.children, true);
+    if(doorHits.length){
+      const root = findRoot(doorHits[0].object, "door");
+      if(root){ selectDoor(root); return; }
+    }
+    const bldHits = ray.intersectObjects(buildingsGroup.children, true);
+    if(bldHits.length){
+      const root = findRoot(bldHits[0].object, "building");
+      if(root){ selectBuilding(root); return; }
+    }
+    clearSelection();
+  });
+
+  // ========= SELECCIÓN =========
+  let selectedObj = null;
+
+  function fmtTs(raw){
+    if(!raw) return "—";
+    try{ return new Date(raw).toLocaleString("es-MX",{day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit",second:"2-digit"}); }
+    catch{ return raw; }
+  }
+
+  function alertLabel(a){
+    return {ok:"✅ OK",warn:"⚠️ Alerta",disabled:"🔴 Deshabilitada",stale:"🟠 Sin datos"}[a]||a;
+  }
+
+  function clearSelection(){
+    if(selectedObj?.userData?.kind==="building"){
+      const p=selectedObj.userData._parts;
+      if(p){
+        p.fillMesh.material.opacity           = p.fillMesh.userData._oldOp  ??0.20;
+        p.fillMesh.material.emissiveIntensity = p.fillMesh.userData._oldEmi ??0.55;
+        p.wireMesh.material.opacity           = p.wireMesh.userData._oldWire??0.30;
+        p.edges.material.opacity              = p.edges.userData._oldEdge   ??0.95;
+      }
+    }
+    selectedObj=null;
+    selSub.textContent  = "Nada seleccionado";
+    selBody.textContent = "Click sobre un edificio o puerta.";
+  }
+
+  function selectBuilding(root){
+    clearSelection(); selectedObj=root;
+    const b=root.userData.item, p=root.userData._parts;
+    if(p){
+      p.fillMesh.userData._oldOp   = p.fillMesh.material.opacity;
+      p.fillMesh.userData._oldEmi  = p.fillMesh.material.emissiveIntensity;
+      p.wireMesh.userData._oldWire = p.wireMesh.material.opacity;
+      p.edges.userData._oldEdge    = p.edges.material.opacity;
+      p.fillMesh.material.opacity=0.35; p.fillMesh.material.emissiveIntensity=0.95;
+      p.wireMesh.material.opacity=0.55; p.edges.material.opacity=1.0;
+    }
+    selSub.textContent=`${b.id} · ${b.name||""}`;
+    selBody.innerHTML=`
+      <div class="muted">Color: <b>${b.color||""}</b></div>
+      <div class="muted">Altura: <b>${b.height??""}</b></div>
       <div class="muted">Puntos: <b>${(b.poly||[]).length}</b></div>
     `;
-  });
+  }
 
-  // ========= BOTONES =========
-  document.getElementById("btn_reset").onclick = ()=>{
-    camera.position.set(9, 10, 9);
-    controls.target.set(0,0,0);
-    controls.update();
-  };
+  function selectDoor(root){
+    clearSelection(); selectedObj=root;
+    const d=root.userData.item;
+    selSub.textContent=`🚪 ${d.door_id} · ${d.name||""}`;
+    selBody.innerHTML=`
+      <div class="muted mb-1">Ubicación: <b>${d.location||"—"}</b></div>
+      <div class="muted mb-1">Estado: <b>${alertLabel(d.alert)}</b></div>
+      <div class="muted mb-1">Último resultado: <b>${d.last_result||"—"}</b></div>
+      <div class="muted mb-1">Detalle: <b>${d.last_details||"—"}</b></div>
+      <div class="muted mb-2">Último evento: <b>${fmtTs(d.last_ts)}</b></div>
+      ${ME?.can_edit ? `
+        <button class="btn btn-sm btn-primary w-100 mt-1" onclick="window._startPlacingFromPanel('${d.door_id}')">
+          📍 Mover en el mapa
+        </button>` : ""}
+    `;
+  }
 
-  document.getElementById("btn_reload").onclick = async ()=>{
-    setErr("");
-    await loadBaseMap();
-    await loadModel();
-    cancelTrace();
-    updateEditorStatus();
-    setDbg(`dbg: ok | buildings=${MODEL.buildings.length} | grid=${grid.visible ? "on":"off"} | editor=${EDITOR_ON?"on":"off"}`);
-  };
+  // exponer para el botón inline del panel de selección
+  window._startPlacingFromPanel = (door_id)=>{ startPlacing(door_id); };
 
-  document.getElementById("btn_editor").onclick = ()=>{
-    EDITOR_ON = !EDITOR_ON;
-    if(!EDITOR_ON) cancelTrace();
-    setErr(EDITOR_ON ? "Editor ON: Click para puntos. Enter para guardar. Esc para cancelar." : "");
-    updateEditorStatus();
-  };
-
-  document.getElementById("btn_clear").onclick = ()=>{
-    MODEL.buildings = [];
-    clearGroup(buildingsGroup);
-    cancelTrace();
-    setErr("🗑️ Edificios borrados (memoria). Exporta para guardar el archivo vacío si quieres.");
-    updateEditorStatus();
-  };
-
-  document.getElementById("btn_export").onclick = ()=>{
-    const out = {
-      meta: MODEL.meta || {version:1, name:"SigControl Plant Model"},
-      buildings: MODEL.buildings
-    };
-    const txt = JSON.stringify(out, null, 2);
-
-    const blob = new Blob([txt], {type:"application/json"});
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "model.json";
-    a.click();
-    setTimeout(()=>URL.revokeObjectURL(url), 500);
-    setErr("📦 Descargado model.json. Reemplázalo en /static/map/model.json");
-  };
-
-  document.getElementById("btn_copy").onclick = async ()=>{
-    const out = { meta: MODEL.meta || {version:1,name:"SigControl Plant Model"}, buildings: MODEL.buildings };
-    const txt = JSON.stringify(out, null, 2);
-    await navigator.clipboard.writeText(txt);
-    setErr("✅ JSON copiado al portapapeles.");
-  };
-
-  // ========= TECLAS =========
+  // ========= TECLADO =========
   addEventListener("keydown", (e)=>{
-    const k = e.key.toLowerCase();
-
-    if(k === "e"){
-      EDITOR_ON = !EDITOR_ON;
-      if(!EDITOR_ON) cancelTrace();
-      setErr(EDITOR_ON ? "Editor ON: Click para puntos. Enter para guardar. Esc para cancelar." : "");
-      updateEditorStatus();
-    }
-
-    if(k === "g"){
-      grid.visible = !grid.visible;
-      setDbg(`dbg: buildings=${MODEL.buildings.length} | grid=${grid.visible ? "on":"off"} | editor=${EDITOR_ON?"on":"off"}`);
-    }
-
-    if(!EDITOR_ON) return;
-
-    if(k === "z") undoPoint();
-    if(k === "escape") cancelTrace();
-    if(k === "enter") saveBuilding();
+    if(e.key==="Escape"){ stopPlacing(); clearSelection(); }
+    if(e.key.toLowerCase()==="g") grid.visible=!grid.visible;
+    if(e.key.toLowerCase()==="d") doorsGroup.visible=!doorsGroup.visible;
+    setDbg(`dbg: buildings=${MODEL.buildings.length} | puertas=${DOORS_STATUS.length} | grid=${grid.visible?"on":"off"} | doors=${doorsGroup.visible?"on":"off"}`);
   });
 
-  addEventListener("resize", ()=>{
-    renderer.setSize(stage.clientWidth, stage.clientHeight);
-    camera.aspect = stage.clientWidth/stage.clientHeight;
+  // ========= UI =========
+  document.getElementById("btn_reset").onclick=()=>{ camera.position.set(9,10,9); controls.target.set(0,0,0); controls.update(); };
+  document.getElementById("btn_reload").onclick=async()=>{
+    setErr("");
+    try{
+      await loadBaseMap(); await loadModel(); await loadDoorsStatus(); clearSelection();
+      setDbg(`dbg: ok | buildings=${MODEL.buildings.length} | puertas=${DOORS_STATUS.length}`);
+    }catch(e){ setErr("reload: "+e.message); }
+  };
+
+  addEventListener("resize",()=>{
+    renderer.setSize(stage.clientWidth,stage.clientHeight);
+    camera.aspect=stage.clientWidth/stage.clientHeight;
     camera.updateProjectionMatrix();
   });
 
-  // ========= ANIM =========
+  // ========= ANIMACIÓN =========
   function animate(){
     requestAnimationFrame(animate);
     controls.update();
+    const t = performance.now()*0.001;
 
-    const t = performance.now() * 0.001;
-
-    // pulso estilo holograma
     for(const g of buildingsGroup.children){
-      g.traverse(obj=>{
-        if(obj.material && obj.material.emissiveIntensity != null){
-          obj.material.emissiveIntensity = 0.45 + 0.25*(0.5+0.5*Math.sin(t*2.0));
-        }
-        if(obj.material && obj.material.wireframe){
-          obj.material.opacity = 0.22 + 0.18*(0.5+0.5*Math.sin(t*2.3));
-        }
+      const isSel=(g===selectedObj);
+      const pulse=( isSel?0.85:0.55)+( isSel?0.10:0.25)*(0.5+0.5*Math.sin(t*2));
+      g.traverse(o=>{
+        if(o.material?.emissiveIntensity!=null) o.material.emissiveIntensity=pulse;
+        if(o.material?.wireframe) o.material.opacity=( isSel?0.50:0.30)+( isSel?0.05:0.10)*(0.5+0.5*Math.sin(t*2.3));
       });
     }
 
-    renderer.render(scene, camera);
+    for(const g of doorsGroup.children){
+      const isSel=(g===selectedObj);
+      const sphere=g.userData._sphere, ring=g.userData._ring;
+      if(sphere){
+        sphere.material.emissiveIntensity=isSel?1.2:(0.7+0.3*(0.5+0.5*Math.sin(t*3+g.position.x)));
+        sphere.scale.setScalar(isSel?1.3:1.0);
+      }
+      if(ring){
+        const cycle=(t*0.8)%1.0;
+        ring.scale.setScalar(1+cycle*2.5);
+        ring.material.opacity=(1-cycle)*0.5;
+      }
+    }
+
+    renderer.render(scene,camera);
   }
 
-  (async ()=>{
+  // ========= INIT =========
+  (async()=>{
     try{
       await loadMe();
       await loadBaseMap();
       await loadModel();
-      updateEditorStatus();
-      setDbg(`dbg: ok | buildings=${MODEL.buildings.length} | grid=${grid.visible ? "on":"off"} | editor=${EDITOR_ON?"on":"off"}`);
+      await loadDoorsStatus();
+      setDbg(`dbg: ok | buildings=${MODEL.buildings.length} | puertas=${DOORS_STATUS.length} | grid=on`);
       animate();
     }catch(e){
-      console.error(e);
-      setErr("Error init:\n" + (e.message || e));
+      setErr("Error init:\n"+(e.message||e));
       setDbg("dbg: init falló");
     }
   })();
-</script>
 
+  setInterval(loadDoorsStatus, 10000);
+
+</script>
 </body>
 </html>

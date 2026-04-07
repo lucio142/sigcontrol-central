@@ -43,3 +43,31 @@ def require_edit_access():
     """
     roles = tuple(get_edit_roles())
     return require_roles(*roles)
+
+
+from fastapi import Depends, HTTPException, Header
+from sqlalchemy.orm import Session
+
+from app.db import get_db
+from app import crud
+
+
+def require_device(
+    db: Session = Depends(get_db),
+    x_device_id: str | None = Header(default=None),
+    x_device_key: str | None = Header(default=None),
+):
+    if not x_device_id or not x_device_key:
+        raise HTTPException(status_code=401, detail="Missing device credentials")
+
+    door_code = (x_device_id or "").strip()
+
+    ok = crud.verify_device_key(db, door_code, x_device_key)
+    if not ok:
+        raise HTTPException(status_code=401, detail="Invalid device credentials")
+
+    door = crud.get_door_by_code(db, door_code)
+    if not door:
+        raise HTTPException(status_code=404, detail="Door not found")
+
+    return door

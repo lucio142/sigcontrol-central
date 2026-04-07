@@ -1,4 +1,3 @@
-# api/app/crud.py
 from __future__ import annotations
 
 from sqlalchemy.orm import Session
@@ -24,6 +23,7 @@ def clamp01(v: float) -> float:
         return 1.0
     return v
 
+
 def normalize_uid(uid: str) -> str:
     return (uid or "").strip().upper().replace(" ", "")
 
@@ -35,6 +35,7 @@ def normalize_uid(uid: str) -> str:
 def get_staff_user_by_email(db: Session, email: str) -> models.StaffUser | None:
     email = (email or "").strip().lower()
     return db.query(models.StaffUser).filter(models.StaffUser.email == email).first()
+
 
 def create_staff_user(
     db: Session,
@@ -50,7 +51,7 @@ def create_staff_user(
 
     u = models.StaffUser(
         email=email,
-        password_hash=hash_password(password),  # bcrypt-safe (72 bytes)
+        password_hash=hash_password(password),
         role=(role or "").strip(),
         is_active=bool(is_active),
     )
@@ -58,6 +59,7 @@ def create_staff_user(
     db.commit()
     db.refresh(u)
     return u
+
 
 def authenticate_staff_user(db: Session, email: str, password: str) -> models.StaffUser | None:
     u = get_staff_user_by_email(db, email)
@@ -76,8 +78,10 @@ def get_door_by_code(db: Session, door_id: str) -> models.Door | None:
     door_id = (door_id or "").strip()
     return db.query(models.Door).filter(models.Door.door_id == door_id).first()
 
+
 def list_doors(db: Session) -> list[models.Door]:
     return db.query(models.Door).order_by(models.Door.id.asc()).all()
+
 
 def list_doors_by_site(db: Session, site: str) -> list[models.Door]:
     site = (site or "main").strip() or "main"
@@ -87,6 +91,7 @@ def list_doors_by_site(db: Session, site: str) -> list[models.Door]:
         .order_by(models.Door.id.asc())
         .all()
     )
+
 
 def create_door(
     db: Session,
@@ -116,6 +121,7 @@ def create_door(
     db.refresh(d)
     return d
 
+
 def update_door(
     db: Session,
     door: models.Door,
@@ -141,6 +147,7 @@ def update_door(
     db.refresh(door)
     return door
 
+
 def update_door_coords(db: Session, door: models.Door, x: float, y: float) -> models.Door:
     door.x = clamp01(x)
     door.y = clamp01(y)
@@ -148,21 +155,37 @@ def update_door_coords(db: Session, door: models.Door, x: float, y: float) -> mo
     db.refresh(door)
     return door
 
+
 def delete_door(db: Session, door: models.Door) -> None:
     db.delete(door)
     db.commit()
 
 
 # =========================
-# NFC USERS (globales)
+# NFC USERS
 # =========================
 
 def get_nfc_user_by_uid(db: Session, uid: str) -> models.NfcUser | None:
     uid = normalize_uid(uid)
-    return db.query(models.NfcUser).filter(models.NfcUser.uid_hex == uid).first()
+
+    user = db.query(models.NfcUser).filter(models.NfcUser.uid_hex == uid).first()
+    if user:
+        return user
+
+    cred = db.query(models.NfcCredential).filter(
+        models.NfcCredential.uid_hex == uid,
+        models.NfcCredential.is_active == True,
+    ).first()
+
+    if cred:
+        return cred.nfc_user
+
+    return None
+
 
 def list_nfc_users(db: Session) -> list[models.NfcUser]:
     return db.query(models.NfcUser).order_by(models.NfcUser.id.asc()).all()
+
 
 def create_nfc_user(
     db: Session,
@@ -187,6 +210,7 @@ def create_nfc_user(
     db.refresh(u)
     return u
 
+
 def update_nfc_user(
     db: Session,
     u: models.NfcUser,
@@ -201,13 +225,74 @@ def update_nfc_user(
     db.refresh(u)
     return u
 
+
 def delete_nfc_user(db: Session, u: models.NfcUser) -> None:
     db.delete(u)
     db.commit()
 
 
 # =========================
-# DOOR ACCESS (permisos por puerta)
+# NFC CREDENTIALS
+# =========================
+
+def get_nfc_credential_by_uid(db: Session, uid: str) -> models.NfcCredential | None:
+    uid = normalize_uid(uid)
+    return db.query(models.NfcCredential).filter(
+        models.NfcCredential.uid_hex == uid
+    ).first()
+
+
+def list_nfc_credentials_by_user(db: Session, nfc_user_id: int) -> list[models.NfcCredential]:
+    return db.query(models.NfcCredential).filter(
+        models.NfcCredential.nfc_user_id == nfc_user_id
+    ).order_by(models.NfcCredential.id.asc()).all()
+
+
+def create_nfc_credential(
+    db: Session,
+    nfc_user_id: int,
+    uid_hex: str,
+    tag_type: str = "tag",
+    is_active: bool = True,
+) -> models.NfcCredential:
+    uid_hex = normalize_uid(uid_hex)
+
+    existing = get_nfc_credential_by_uid(db, uid_hex)
+    if existing:
+        return existing
+
+    cred = models.NfcCredential(
+        nfc_user_id=nfc_user_id,
+        uid_hex=uid_hex,
+        tag_type=(tag_type or "tag").strip(),
+        is_active=bool(is_active),
+    )
+    db.add(cred)
+    db.commit()
+    db.refresh(cred)
+    return cred
+
+
+def update_nfc_credential(
+    db: Session,
+    credential: models.NfcCredential,
+    tag_type: str,
+    is_active: bool,
+) -> models.NfcCredential:
+    credential.tag_type = (tag_type or "tag").strip()
+    credential.is_active = bool(is_active)
+    db.commit()
+    db.refresh(credential)
+    return credential
+
+
+def delete_nfc_credential(db: Session, credential: models.NfcCredential) -> None:
+    db.delete(credential)
+    db.commit()
+
+
+# =========================
+# DOOR ACCESS
 # =========================
 
 def is_nfc_allowed_for_door(db: Session, door_pk: int, nfc_pk: int) -> bool:
@@ -219,6 +304,7 @@ def is_nfc_allowed_for_door(db: Session, door_pk: int, nfc_pk: int) -> bool:
         )
     ).first()
     return row is not None
+
 
 def allow_nfc_for_door(db: Session, door_pk: int, nfc_pk: int, allowed: bool = True) -> models.DoorAccess:
     row = db.query(models.DoorAccess).filter(
@@ -235,11 +321,8 @@ def allow_nfc_for_door(db: Session, door_pk: int, nfc_pk: int, allowed: bool = T
     db.refresh(row)
     return row
 
+
 def list_door_access(db: Session) -> list[tuple[str, str, str, bool]]:
-    """
-    Devuelve filas listas para el dashboard:
-    (door_id, uid_hex, full_name, is_allowed)
-    """
     rows = (
         db.query(
             models.Door.door_id,
@@ -279,10 +362,10 @@ def log_event(
     db.add(ev)
     db.commit()
 
+
 def list_events(db: Session, limit: int = 200) -> list[models.EventLog]:
     limit = max(1, min(int(limit), 1000))
     return db.query(models.EventLog).order_by(models.EventLog.ts.desc()).limit(limit).all()
-
 
 
 def list_events_by_door(db: Session, door_id: str, limit: int = 50) -> list[models.EventLog]:
@@ -296,6 +379,7 @@ def list_events_by_door(db: Session, door_id: str, limit: int = 50) -> list[mode
         .all()
     )
 
+
 def get_last_event_by_door(db: Session, door_id: str) -> models.EventLog | None:
     door_id = (door_id or "").strip()
     return (
@@ -305,35 +389,300 @@ def get_last_event_by_door(db: Session, door_id: str) -> models.EventLog | None:
         .first()
     )
 
-def compute_door_alert(door: models.Door, last: models.EventLog | None) -> tuple[str, datetime | None, str, str]:
-    """
-    alert: ok | warn | disabled | stale
-    """
+
+# =========================
+# DEVICE KEYS
+# =========================
+
+def create_device_key(
+    db: Session,
+    door_id: str,
+    raw_key: str,
+    description: str = "",
+) -> models.DeviceKey:
+    existing = db.query(models.DeviceKey).filter(
+        models.DeviceKey.door_id == door_id
+    ).first()
+
+    if existing:
+        existing.key_hash = hash_password(raw_key)
+        existing.description = description
+        existing.is_active = True
+        db.commit()
+        db.refresh(existing)
+        return existing
+
+    dk = models.DeviceKey(
+        door_id=door_id,
+        key_hash=hash_password(raw_key),
+        description=description,
+        is_active=True,
+    )
+    db.add(dk)
+    db.commit()
+    db.refresh(dk)
+    return dk
+
+
+def get_device_key_by_door(db: Session, door_id: str) -> models.DeviceKey | None:
+    return db.query(models.DeviceKey).filter(
+        models.DeviceKey.door_id == door_id,
+        models.DeviceKey.is_active == True,
+    ).first()
+
+
+def get_device_key_any_status(db: Session, door_id: str) -> models.DeviceKey | None:
+    return db.query(models.DeviceKey).filter(
+        models.DeviceKey.door_id == door_id
+    ).first()
+
+
+def touch_device_last_seen(db: Session, door_id: str) -> models.DeviceKey | None:
+    dk = get_device_key_any_status(db, door_id)
+    if not dk:
+        return None
+    dk.last_seen = datetime.now(timezone.utc)
+    db.commit()
+    db.refresh(dk)
+    return dk
+
+
+def verify_device_key(db: Session, door_id: str, raw_key: str) -> bool:
+    dk = get_device_key_by_door(db, door_id)
+    if not dk:
+        return False
+
+    ok = verify_password(raw_key, dk.key_hash)
+    if ok:
+        dk.last_seen = datetime.now(timezone.utc)
+        db.commit()
+
+    return ok
+
+
+def list_device_keys(db: Session) -> list[models.DeviceKey]:
+    return db.query(models.DeviceKey).order_by(models.DeviceKey.id.asc()).all()
+
+
+def delete_device_key(db: Session, door_id: str) -> bool:
+    dk = db.query(models.DeviceKey).filter(
+        models.DeviceKey.door_id == door_id
+    ).first()
+    if not dk:
+        return False
+    db.delete(dk)
+    db.commit()
+    return True
+
+
+def toggle_device_key(db: Session, door_id: str) -> models.DeviceKey | None:
+    dk = db.query(models.DeviceKey).filter(
+        models.DeviceKey.door_id == door_id
+    ).first()
+    if not dk:
+        return None
+    dk.is_active = not dk.is_active
+    db.commit()
+    db.refresh(dk)
+    return dk
+
+
+# =========================
+# ALERTAS / STATUS DE PUERTA
+# =========================
+
+def compute_door_alert(
+    door: models.Door,
+    last: models.EventLog | None,
+    device_last_seen: datetime | None = None,
+) -> tuple[str, datetime | None, str, str]:
     if not door.is_enabled:
-        return ("disabled", None, "", "door_disabled")
+        return ("disabled", device_last_seen or (last.ts if last else None), "", "door_disabled")
 
-    if not last:
-        # sin eventos: lo marcamos como "stale" (no hay telemetría)
-        return ("stale", None, "", "no_events")
+    ts_event = last.ts if last else None
 
-    # last.ts puede venir naive/aware. Normalizamos.
-    ts = last.ts
     try:
-        if ts.tzinfo is None:
-            ts = ts.replace(tzinfo=timezone.utc)
+        if ts_event and ts_event.tzinfo is None:
+            ts_event = ts_event.replace(tzinfo=timezone.utc)
     except Exception:
-        ts = None
+        ts_event = None
 
-    # si hace mucho no reporta
-    if ts:
-        if datetime.now(timezone.utc) - ts > timedelta(hours=12):
-            return ("stale", ts, (last.result or ""), (last.details or ""))
+    try:
+        if device_last_seen and device_last_seen.tzinfo is None:
+            device_last_seen = device_last_seen.replace(tzinfo=timezone.utc)
+    except Exception:
+        device_last_seen = None
 
-    # regla simple de alerta: denied / no_permission / door_not_found / etc
-    r = (last.result or "").lower()
-    d = (last.details or "").lower()
-    if "deny" in r or "denied" in r or "no_permission" in d or "inactive" in d:
-        return ("warn", ts, (last.result or ""), (last.details or ""))
+    now = datetime.now(timezone.utc)
 
-    return ("ok", ts, (last.result or ""), (last.details or ""))
+    if not device_last_seen:
+        return ("stale", ts_event, (last.result if last else ""), "device_offline")
 
+    if now - device_last_seen > timedelta(minutes=5):
+        return ("stale", ts_event, (last.result if last else ""), "device_timeout")
+
+    if last:
+        r = (last.result or "").lower()
+        d = (last.details or "").lower()
+        if "deny" in r or "denied" in r or "no_permission" in d or "inactive" in d:
+            return ("warn", ts_event, (last.result or ""), (last.details or ""))
+
+    return ("ok", ts_event, (last.result if last else ""), (last.details if last else "online"))
+
+
+# =========================
+# ENROLLMENT STATION KEYS
+# =========================
+
+def create_enrollment_station_key(
+    db: Session,
+    station_name: str,
+    raw_key: str,
+    description: str = "",
+) -> models.EnrollmentStationKey:
+    station_name = (station_name or "").strip()
+
+    existing = db.query(models.EnrollmentStationKey).filter(
+        models.EnrollmentStationKey.station_name == station_name
+    ).first()
+
+    if existing:
+        existing.key_hash = hash_password(raw_key)
+        existing.description = description or ""
+        existing.is_active = True
+        db.commit()
+        db.refresh(existing)
+        return existing
+
+    obj = models.EnrollmentStationKey(
+        station_name=station_name,
+        key_hash=hash_password(raw_key),
+        description=description or "",
+        is_active=True,
+    )
+    db.add(obj)
+    db.commit()
+    db.refresh(obj)
+    return obj
+
+
+def get_enrollment_station_key(
+    db: Session,
+    station_name: str,
+) -> models.EnrollmentStationKey | None:
+    station_name = (station_name or "").strip()
+    return db.query(models.EnrollmentStationKey).filter(
+        models.EnrollmentStationKey.station_name == station_name,
+        models.EnrollmentStationKey.is_active == True,
+    ).first()
+
+
+def verify_enrollment_station_key(
+    db: Session,
+    station_name: str,
+    raw_key: str,
+) -> bool:
+    obj = get_enrollment_station_key(db, station_name)
+    if not obj:
+        return False
+    return verify_password(raw_key, obj.key_hash)
+
+
+# =========================
+# ENROLLMENT SESSIONS
+# =========================
+
+def create_enrollment_session(
+    db: Session,
+    station_name: str,
+    requested_by_id: int | None,
+    tag_type: str = "tag",
+) -> models.EnrollmentSession:
+    now = datetime.now(timezone.utc)
+
+    session = models.EnrollmentSession(
+        station_name=(station_name or "main").strip() or "main",
+        requested_by_id=requested_by_id,
+        status="pending",
+        tag_type=(tag_type or "tag").strip() or "tag",
+        uid_hex="",
+        error_message="",
+        expires_at=now + timedelta(seconds=60),
+    )
+    db.add(session)
+    db.commit()
+    db.refresh(session)
+    return session
+
+
+def get_enrollment_session(db: Session, session_id: int) -> models.EnrollmentSession | None:
+    return db.query(models.EnrollmentSession).filter(
+        models.EnrollmentSession.id == session_id
+    ).first()
+
+
+def get_pending_enrollment_session(
+    db: Session,
+    station_name: str = "main",
+) -> models.EnrollmentSession | None:
+    now = datetime.now(timezone.utc)
+
+    rows = db.query(models.EnrollmentSession).filter(
+        models.EnrollmentSession.station_name == ((station_name or "main").strip() or "main"),
+        models.EnrollmentSession.status == "pending",
+    ).order_by(models.EnrollmentSession.id.asc()).all()
+
+    for row in rows:
+        exp = row.expires_at
+        try:
+            if exp and exp.tzinfo is None:
+                exp = exp.replace(tzinfo=timezone.utc)
+        except Exception:
+            exp = None
+
+        if exp and exp < now:
+            row.status = "expired"
+            row.error_message = "session_expired"
+            db.commit()
+            db.refresh(row)
+            continue
+
+        return row
+
+    return None
+
+
+def report_enrollment_uid(
+    db: Session,
+    session_obj: models.EnrollmentSession,
+    uid_hex: str,
+) -> models.EnrollmentSession:
+    session_obj.uid_hex = normalize_uid(uid_hex)
+    session_obj.status = "read"
+    session_obj.read_at = datetime.now(timezone.utc)
+    session_obj.error_message = ""
+    db.commit()
+    db.refresh(session_obj)
+    return session_obj
+
+
+def consume_enrollment_session(
+    db: Session,
+    session_obj: models.EnrollmentSession,
+) -> models.EnrollmentSession:
+    session_obj.status = "consumed"
+    db.commit()
+    db.refresh(session_obj)
+    return session_obj
+
+
+def cancel_enrollment_session(
+    db: Session,
+    session_obj: models.EnrollmentSession,
+    error_message: str = "",
+) -> models.EnrollmentSession:
+    session_obj.status = "cancelled"
+    session_obj.error_message = (error_message or "")[:255]
+    db.commit()
+    db.refresh(session_obj)
+    return session_obj

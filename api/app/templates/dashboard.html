@@ -8,34 +8,36 @@
 
   <style>
     :root{
-      /* Holcim-ish (azul + verde) */
       --hc-blue:#0b5ed7;
       --hc-green:#16a34a;
       --hc-dark:#0f172a;
     }
-    .hc-nav{
-      background: linear-gradient(90deg, var(--hc-blue), var(--hc-green));
-    }
-    .hc-card-title{
-      font-weight:600;
-    }
-    .hc-pill{
-      border:1px solid rgba(255,255,255,.35);
-    }
+    .hc-nav{ background: linear-gradient(90deg, var(--hc-blue), var(--hc-green)); }
+    .hc-card-title{ font-weight:600; }
+    .hc-pill{ border:1px solid rgba(255,255,255,.35); }
     .small-muted{ color:#64748b; font-size:.85rem; }
     .table td, .table th{ vertical-align: middle; }
     code{ font-size:.9em; }
+    #conn_dot{
+      width:9px; height:9px; border-radius:50%;
+      display:inline-block; margin-right:4px;
+      background:#6b7280; transition: background .4s;
+    }
+    #conn_dot.ok{ background:#16a34a; }
+    #conn_dot.err{ background:#dc2626; }
   </style>
 </head>
 
 <body>
 <nav class="navbar navbar-dark hc-nav px-3">
   <span class="navbar-brand fw-semibold">SigControl Central</span>
-
   <div class="d-flex align-items-center gap-2">
     <span id="role_badge" class="badge bg-dark hc-pill">...</span>
-
+    <span class="d-flex align-items-center" style="color:rgba(255,255,255,.75);font-size:.8rem;">
+      <span id="conn_dot"></span><span id="conn_label">—</span>
+    </span>
     <a class="btn btn-outline-light btn-sm" href="/map">Mapa 3D</a>
+    <a id="admin_btn" class="btn btn-outline-light btn-sm" href="/admin" style="display:none;">Admin</a>
     <a class="btn btn-outline-light btn-sm" href="/docs" target="_blank">API Docs</a>
     <button class="btn btn-outline-light btn-sm" onclick="logout()">Salir</button>
   </div>
@@ -43,13 +45,13 @@
 
 <div class="container py-4">
 
-  <!-- ====== ALERTAS ====== -->
+  <!-- ALERTAS -->
   <div class="card shadow-sm mb-4">
     <div class="card-body">
       <div class="d-flex align-items-center justify-content-between mb-2">
         <div>
           <div class="hc-card-title">Alertas</div>
-          <div class="small-muted">Se generan automáticamente con base en los eventos recientes.</div>
+          <div class="small-muted">Generadas automáticamente con base en los eventos recientes.</div>
         </div>
         <div class="d-flex gap-2 align-items-center">
           <select id="alerts_window" class="form-select form-select-sm" style="width:150px" onchange="refreshAll()">
@@ -60,9 +62,7 @@
           <button class="btn btn-outline-secondary btn-sm" onclick="renderAlerts()">Actualizar alertas</button>
         </div>
       </div>
-
       <div id="alerts_summary" class="d-flex flex-wrap gap-2 mb-3"></div>
-
       <div class="table-responsive">
         <table class="table table-sm table-striped align-middle mb-0">
           <thead>
@@ -76,13 +76,11 @@
           <tbody id="alerts_rows"></tbody>
         </table>
       </div>
-
       <div id="alerts_msg" class="text-danger small mt-2"></div>
     </div>
   </div>
 
-
-  <!-- ====== PUERTAS ====== -->
+  <!-- PUERTAS -->
   <div class="card shadow-sm mb-4">
     <div class="card-body">
       <div class="d-flex align-items-center justify-content-between mb-2">
@@ -90,12 +88,9 @@
           <div class="hc-card-title">Puertas</div>
           <div class="small-muted">Lista y estado. (Edición solo admin)</div>
         </div>
-        <div class="d-flex gap-2">
-          <button class="btn btn-outline-secondary btn-sm" onclick="loadDoors()">Actualizar puertas</button>
-        </div>
+        <button class="btn btn-outline-secondary btn-sm" onclick="loadDoors()">Actualizar puertas</button>
       </div>
 
-      <!-- Form agregar puerta (solo admin) -->
       <div id="door_create_box" class="border rounded p-3 mb-3" style="display:none;">
         <div class="row g-2 align-items-end">
           <div class="col-md-2">
@@ -121,7 +116,6 @@
             <button class="btn btn-success btn-sm w-100" onclick="createDoor()">Agregar</button>
           </div>
         </div>
-        <div class="small-muted mt-2">Tip: después puedes ubicarla en el mapa arrastrando el punto (si tienes permisos).</div>
         <div id="door_create_msg" class="text-danger small mt-2"></div>
       </div>
 
@@ -133,32 +127,27 @@
               <th>Nombre</th>
               <th>Ubicación</th>
               <th style="width:120px;">Habilitada</th>
-              <th style="width:140px;">Mapa</th>
+              <th style="width:140px;">Mapa (x/y)</th>
               <th style="width:160px;">Acción</th>
             </tr>
           </thead>
           <tbody id="doors_rows"></tbody>
         </table>
       </div>
-
       <div id="doors_msg" class="text-danger small mt-2"></div>
     </div>
   </div>
 
-
-  <!-- ====== MATRIZ DE PERMISOS ====== -->
+  <!-- MATRIZ DE PERMISOS -->
   <div class="card shadow-sm mb-4">
     <div class="card-body">
       <div class="d-flex align-items-center justify-content-between mb-2">
         <div>
           <div class="hc-card-title">Matriz de permisos (Puerta ↔ Usuario)</div>
-          <div class="small-muted">Editable solo si tu usuario tiene permisos (hsc / sistemas / admin según .env)</div>
+          <div class="small-muted">Editable según rol (hsc / sistemas / admin)</div>
         </div>
-        <div class="d-flex gap-2">
-          <button class="btn btn-outline-secondary btn-sm" onclick="loadAccessMatrix()">Actualizar permisos</button>
-        </div>
+        <button class="btn btn-outline-secondary btn-sm" onclick="loadAccessMatrix()">Actualizar permisos</button>
       </div>
-
       <div class="table-responsive">
         <table class="table table-striped align-middle">
           <thead>
@@ -172,13 +161,11 @@
           <tbody id="access_rows"></tbody>
         </table>
       </div>
-
       <div id="access_msg" class="text-danger small"></div>
     </div>
   </div>
 
-
-  <!-- ====== EVENTOS ====== -->
+  <!-- EVENTOS -->
   <div class="card shadow-sm">
     <div class="card-body">
       <div class="d-flex align-items-center justify-content-between mb-3">
@@ -186,7 +173,6 @@
           <div class="hc-card-title">Eventos recientes</div>
           <div class="small-muted">Se actualiza cada 4s. (ESP32 → /api/access/check)</div>
         </div>
-
         <div class="d-flex gap-2">
           <select id="limit" class="form-select form-select-sm" style="width:120px" onchange="loadEvents()">
             <option value="50">50</option>
@@ -196,7 +182,6 @@
           <button class="btn btn-outline-secondary btn-sm" onclick="loadEvents()">Actualizar</button>
         </div>
       </div>
-
       <div class="table-responsive">
         <table class="table table-striped align-middle">
           <thead>
@@ -213,7 +198,6 @@
           <tbody id="rows"></tbody>
         </table>
       </div>
-
       <div id="msg" class="text-danger small"></div>
     </div>
   </div>
@@ -225,213 +209,207 @@ let ME = null;
 let EVENTS_CACHE = [];
 let DOORS_CACHE = [];
 
-function logout(){
-  sessionStorage.removeItem('token');
-  window.location.href = '/login';
-}
-
-function fmtResult(x){
-  const v = (x || '').toLowerCase();
-  if(v.includes('grant') || v === 'ok') return `<span class="badge bg-success">${x}</span>`;
-  if(v.includes('deny')) return `<span class="badge bg-danger">${x}</span>`;
-  if(v.includes('disabled')) return `<span class="badge bg-warning text-dark">${x}</span>`;
-  return `<span class="badge bg-secondary">${x}</span>`;
-}
-
-async function api(path, opts={}){
+async function api(path, opts = {}) {
   const token = sessionStorage.getItem('token');
-  if(!token){ window.location.href='/login'; return; }
+  if (!token) { window.location.href = '/login'; return; }
 
-  const headers = opts.headers || {};
-  headers['Authorization'] = 'Bearer ' + token;
-  if(opts.body && !headers['Content-Type']){
+  const headers = { 'Authorization': 'Bearer ' + token, ...(opts.headers || {}) };
+  const method = (opts.method || 'GET').toUpperCase();
+  if (['POST', 'PUT', 'PATCH'].includes(method)) {
     headers['Content-Type'] = 'application/json';
   }
 
   const r = await fetch(path, { ...opts, headers });
-  if(!r.ok){
-    const t = await r.text().catch(()=> '');
-    throw new Error(t || ('HTTP ' + r.status));
+
+  if (r.status === 401) {
+    sessionStorage.removeItem('token');
+    window.location.href = '/login';
+    return;
   }
+
+  if (!r.ok) {
+    let detail = '';
+    try { detail = (await r.json()).detail || r.statusText; } catch { detail = r.statusText; }
+    throw new Error(detail);
+  }
+
   const ct = r.headers.get('content-type') || '';
-  if(ct.includes('application/json')) return r.json();
-  return r.text();
+  return ct.includes('application/json') ? r.json() : r.text();
 }
 
-async function loadMe(){
+function fmtTs(raw) {
+  if (!raw) return '—';
+  try {
+    return new Date(raw).toLocaleString('es-MX', {
+      day: '2-digit', month: '2-digit', year: 'numeric',
+      hour: '2-digit', minute: '2-digit', second: '2-digit'
+    });
+  } catch { return raw; }
+}
+
+function fmtResult(x) {
+  const v = (x || '').toLowerCase();
+  if (v.includes('grant') || v === 'ok') return `<span class="badge bg-success">${x}</span>`;
+  if (v.includes('deny') || v === 'denied') return `<span class="badge bg-danger">${x}</span>`;
+  if (v.includes('disabled')) return `<span class="badge bg-warning text-dark">${x}</span>`;
+  return `<span class="badge bg-secondary">${x}</span>`;
+}
+
+function escapeHtml(s) {
+  return String(s ?? '')
+    .replaceAll('&', '&amp;').replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;').replaceAll('"', '&quot;')
+    .replaceAll("'", "&#039;");
+}
+
+function setConn(ok) {
+  const dot = document.getElementById('conn_dot');
+  const label = document.getElementById('conn_label');
+  dot.className = ok ? 'ok' : 'err';
+  label.textContent = ok ? 'Conectado' : 'Sin conexión';
+}
+
+function logout() {
+  sessionStorage.removeItem('token');
+  window.location.href = '/login';
+}
+
+async function loadMe() {
   ME = await api('/api/auth/me');
+
   const badge = document.getElementById('role_badge');
-  if(badge){
+  if (badge) {
     badge.className = 'badge ' + (ME.can_edit ? 'bg-success' : 'bg-dark') + ' hc-pill';
     badge.textContent = `${ME.role}${ME.can_edit ? ' (editor)' : ''}`;
   }
 
-  // Mostrar caja crear puertas solo admin
   const box = document.getElementById('door_create_box');
-  if(box) box.style.display = (ME.role === 'admin') ? 'block' : 'none';
+  if (box) box.style.display = (ME.role === 'admin') ? 'block' : 'none';
+
+  const adminBtn = document.getElementById('admin_btn');
+  if (adminBtn) {
+    adminBtn.style.display = (ME.role === 'admin') ? 'inline-block' : 'none';
+  }
 }
 
-/* =========================
-   PUERTAS
-========================= */
-async function loadDoors(){
+async function loadDoors() {
   const msg = document.getElementById('doors_msg');
   msg.textContent = '';
   const tbody = document.getElementById('doors_rows');
   tbody.innerHTML = '';
 
-  try{
+  try {
     const doors = await api('/api/doors');
     DOORS_CACHE = doors;
 
-    for(const d of doors){
+    for (const d of doors) {
       const tr = document.createElement('tr');
-
       const isAdmin = (ME && ME.role === 'admin');
       const disabled = isAdmin ? '' : 'disabled';
 
       tr.innerHTML = `
         <td><code>${d.door_id}</code></td>
-
         <td>
-          <input class="form-control form-control-sm"
-            value="${escapeHtml(d.name ?? '')}"
-            ${disabled}
-            data-door="${d.door_id}" data-field="name"
-            onchange="updateDoorField(this)">
+          <input class="form-control form-control-sm" value="${escapeHtml(d.name ?? '')}"
+            ${disabled} data-door="${d.door_id}" data-field="name" onchange="updateDoorField(this)">
         </td>
-
         <td>
-          <input class="form-control form-control-sm"
-            value="${escapeHtml(d.location ?? '')}"
-            ${disabled}
-            data-door="${d.door_id}" data-field="location"
-            onchange="updateDoorField(this)">
+          <input class="form-control form-control-sm" value="${escapeHtml(d.location ?? '')}"
+            ${disabled} data-door="${d.door_id}" data-field="location" onchange="updateDoorField(this)">
         </td>
-
         <td>
           <div class="form-check form-switch m-0">
             <input class="form-check-input" type="checkbox" ${d.is_enabled ? 'checked' : ''} ${disabled}
-              data-door="${d.door_id}" data-field="is_enabled"
-              onchange="updateDoorField(this)">
+              data-door="${d.door_id}" data-field="is_enabled" onchange="updateDoorField(this)">
           </div>
         </td>
-
         <td>
-          <span class="badge bg-secondary">x:${(d.x ?? 0).toFixed ? (d.x ?? 0).toFixed(2) : (d.x ?? 0)}</span>
-          <span class="badge bg-secondary">y:${(d.y ?? 0).toFixed ? (d.y ?? 0).toFixed(2) : (d.y ?? 0)}</span>
+          <span class="badge bg-secondary">x:${(d.x ?? 0).toFixed(2)}</span>
+          <span class="badge bg-secondary">y:${(d.y ?? 0).toFixed(2)}</span>
         </td>
-
         <td class="d-flex gap-2">
           <a class="btn btn-outline-primary btn-sm" href="/map">Ver</a>
-          ${isAdmin ? `<button class="btn btn-outline-danger btn-sm" onclick="deleteDoor('${d.door_id}')">Eliminar</button>` : ``}
+          ${isAdmin ? `<button class="btn btn-outline-danger btn-sm" onclick="deleteDoor('${d.door_id}')">Eliminar</button>` : ''}
         </td>
       `;
       tbody.appendChild(tr);
     }
 
-    if(!doors.length){
-      msg.textContent = 'Aún no hay puertas. (Como admin puedes agregarlas arriba).';
-    }
-  }catch(e){
+    if (!doors.length) msg.textContent = 'Aún no hay puertas.';
+  } catch (e) {
     msg.textContent = 'Error al cargar puertas: ' + e.message;
   }
 }
 
-async function createDoor(){
+async function createDoor() {
   const msg = document.getElementById('door_create_msg');
   msg.textContent = '';
-
-  try{
-    const door_id = (document.getElementById('new_door_id').value || '').trim();
-    const name = (document.getElementById('new_door_name').value || '').trim();
-    const location = (document.getElementById('new_door_location').value || '').trim();
-    const is_enabled = (document.getElementById('new_door_enabled').value === 'true');
-
-    if(!door_id){
-      msg.textContent = 'door_id es obligatorio (ej: D-001).';
-      return;
-    }
+  try {
+    const door_id = document.getElementById('new_door_id').value.trim();
+    if (!door_id) { msg.textContent = 'door_id es obligatorio (ej: D-001).'; return; }
 
     await api('/api/doors', {
       method: 'POST',
-      body: JSON.stringify({ door_id, name, location, is_enabled })
+      body: JSON.stringify({
+        door_id,
+        name: document.getElementById('new_door_name').value.trim(),
+        location: document.getElementById('new_door_location').value.trim(),
+        is_enabled: document.getElementById('new_door_enabled').value === 'true'
+      })
     });
 
-    document.getElementById('new_door_id').value = '';
-    document.getElementById('new_door_name').value = '';
-    document.getElementById('new_door_location').value = '';
+    ['new_door_id', 'new_door_name', 'new_door_location'].forEach(id => document.getElementById(id).value = '');
     document.getElementById('new_door_enabled').value = 'true';
-
     await loadDoors();
-  }catch(e){
+  } catch (e) {
     msg.textContent = 'Error al crear puerta: ' + e.message;
   }
 }
 
-async function updateDoorField(el){
+async function updateDoorField(el) {
   const door_id = el.getAttribute('data-door');
   const field = el.getAttribute('data-field');
-
-  // Encuentra door actual
   const d = DOORS_CACHE.find(x => x.door_id === door_id);
-  if(!d) return;
+  if (!d) return;
 
-  // Construye payload DoorIn
-  const payload = {
-    door_id: d.door_id,
-    name: d.name ?? '',
-    location: d.location ?? '',
-    is_enabled: !!d.is_enabled
-  };
+  const payload = { door_id: d.door_id, name: d.name ?? '', location: d.location ?? '', is_enabled: !!d.is_enabled };
+  if (field === 'name') payload.name = el.value;
+  if (field === 'location') payload.location = el.value;
+  if (field === 'is_enabled') payload.is_enabled = !!el.checked;
 
-  if(field === 'name') payload.name = el.value;
-  if(field === 'location') payload.location = el.value;
-  if(field === 'is_enabled') payload.is_enabled = !!el.checked;
-
-  // UI lock
   el.disabled = true;
-
-  try{
-    await api('/api/doors/' + encodeURIComponent(door_id), {
-      method: 'PUT',
-      body: JSON.stringify(payload)
-    });
-    // refresca caché
+  try {
+    await api('/api/doors/' + encodeURIComponent(door_id), { method: 'PUT', body: JSON.stringify(payload) });
     await loadDoors();
-  }catch(e){
-    alert('Error al actualizar puerta (solo admin): ' + e.message);
-    await loadDoors(); // rollback visual
+  } catch (e) {
+    alert('Error al actualizar puerta: ' + e.message);
+    await loadDoors();
   }
 }
 
-async function deleteDoor(door_id){
-  if(!confirm('¿Eliminar ' + door_id + '?')) return;
-  try{
-    await api('/api/doors/' + encodeURIComponent(door_id), { method:'DELETE' });
+async function deleteDoor(door_id) {
+  if (!confirm('¿Eliminar ' + door_id + '?')) return;
+  try {
+    await api('/api/doors/' + encodeURIComponent(door_id), { method: 'DELETE' });
     await loadDoors();
-  }catch(e){
+  } catch (e) {
     alert('Error al eliminar puerta: ' + e.message);
   }
 }
 
-/* =========================
-   MATRIZ DE PERMISOS
-========================= */
-async function loadAccessMatrix(){
+async function loadAccessMatrix() {
   const msg = document.getElementById('access_msg');
   msg.textContent = '';
   const tbody = document.getElementById('access_rows');
   tbody.innerHTML = '';
 
-  try{
+  try {
     const data = await api('/api/door-access');
 
-    for(const r of data){
+    for (const r of data) {
       const tr = document.createElement('tr');
-
       const disabledAttr = (ME && ME.can_edit) ? '' : 'disabled';
-      const checkedAttr  = r.is_allowed ? 'checked' : '';
+      const checkedAttr = r.is_allowed ? 'checked' : '';
 
       tr.innerHTML = `
         <td><code>${r.door_id}</code></td>
@@ -440,8 +418,7 @@ async function loadAccessMatrix(){
         <td>
           <div class="form-check form-switch m-0">
             <input class="form-check-input" type="checkbox" ${checkedAttr} ${disabledAttr}
-              data-door="${r.door_id}" data-uid="${r.uid_hex}"
-              onchange="setAccess(this)">
+              data-door="${r.door_id}" data-uid="${r.uid_hex}" onchange="setAccess(this)">
             <label class="form-check-label">
               <span>${r.is_allowed ? 'Permitido' : 'Denegado'}</span>
             </label>
@@ -451,60 +428,51 @@ async function loadAccessMatrix(){
       tbody.appendChild(tr);
     }
 
-    if(!data.length){
-      msg.textContent = 'Sin filas aún. Debes tener puertas y usuarios NFC para ver permisos.';
-    } else if(!ME?.can_edit){
-      msg.textContent = 'Tu rol no tiene permisos de edición. (Solo lectura)';
-    }
-  }catch(e){
+    if (!data.length) msg.textContent = 'Sin filas. Necesitas puertas y usuarios NFC para ver permisos.';
+    else if (!ME?.can_edit) msg.textContent = 'Tu rol no tiene permisos de edición. (Solo lectura)';
+  } catch (e) {
     msg.textContent = 'Error al cargar matriz de permisos: ' + e.message;
   }
 }
 
-async function setAccess(el){
+async function setAccess(el) {
   const door_id = el.getAttribute('data-door');
   const uid_hex = el.getAttribute('data-uid');
-
   const labelSpan = el.parentElement.querySelector('span');
   const prev = !el.checked;
-
   labelSpan.textContent = el.checked ? 'Permitido' : 'Denegado';
   el.disabled = true;
 
-  try{
+  try {
     await api('/api/door-access/set', {
       method: 'POST',
       body: JSON.stringify({ door_id, uid_hex, is_allowed: el.checked })
     });
-  }catch(err){
+  } catch {
     el.checked = prev;
     labelSpan.textContent = el.checked ? 'Permitido' : 'Denegado';
     alert('No autorizado o error al actualizar permiso.');
-  }finally{
+  } finally {
     el.disabled = !(ME && ME.can_edit);
   }
 }
 
-/* =========================
-   EVENTOS + ALERTAS
-========================= */
-async function loadEvents(){
+async function loadEvents() {
   const msg = document.getElementById('msg');
   msg.textContent = '';
 
-  try{
+  try {
     const limit = document.getElementById('limit').value;
     const data = await api('/api/events?limit=' + encodeURIComponent(limit));
-
     EVENTS_CACHE = data;
 
     const tbody = document.getElementById('rows');
     tbody.innerHTML = '';
 
-    for(const x of data){
+    for (const x of data) {
       const tr = document.createElement('tr');
       tr.innerHTML = `
-        <td>${escapeHtml(x.ts ?? '')}</td>
+        <td style="white-space:nowrap">${fmtTs(x.ts)}</td>
         <td>${escapeHtml(x.type ?? '')}</td>
         <td>${escapeHtml(x.door ?? '')}</td>
         <td><code>${escapeHtml(x.uid ?? '')}</code></td>
@@ -515,140 +483,113 @@ async function loadEvents(){
       tbody.appendChild(tr);
     }
 
-    renderAlerts(); // recalcula alertas con el cache
-  }catch(e){
+    setConn(true);
+    renderAlerts();
+  } catch (e) {
+    setConn(false);
     msg.textContent = 'No autorizado o error al cargar eventos.';
   }
 }
 
-function renderAlerts(){
+function renderAlerts() {
   const msg = document.getElementById('alerts_msg');
   msg.textContent = '';
-
   const tbody = document.getElementById('alerts_rows');
   tbody.innerHTML = '';
-
   const summary = document.getElementById('alerts_summary');
   summary.innerHTML = '';
 
-  try{
+  try {
     const win = parseInt(document.getElementById('alerts_window').value || '100', 10);
     const evs = (EVENTS_CACHE || []).slice(0, win);
 
-    // Heurísticas simples (puedes sofisticarlas después)
     const denied = evs.filter(e => (e.result || '').toLowerCase().includes('deny') || (e.details || '').toLowerCase().includes('denied'));
     const doorNotFound = evs.filter(e => (e.details || '').toLowerCase().includes('door_not_found'));
     const uidNotReg = evs.filter(e => (e.details || '').toLowerCase().includes('uid_not_registered'));
     const doorDisabled = evs.filter(e => (e.details || '').toLowerCase().includes('door_disabled'));
 
-    // Agrupa por puerta para “denegaciones repetidas”
     const deniedByDoor = {};
-    for(const e of denied){
+    for (const e of denied) {
       const k = e.door || '';
-      if(!k) continue;
-      deniedByDoor[k] = deniedByDoor[k] || {count:0, last:e.ts, details:e.details, type:e.type};
-      deniedByDoor[k].count += 1;
+      if (!k) continue;
+      deniedByDoor[k] = deniedByDoor[k] || { count: 0, last: e.ts };
+      deniedByDoor[k].count++;
       deniedByDoor[k].last = e.ts;
-      deniedByDoor[k].details = e.details;
     }
 
-    // Resumen badges
     const badges = [
-      {label:'Denegados', value: denied.length, cls:'bg-danger'},
-      {label:'Puerta no existe', value: doorNotFound.length, cls:'bg-warning text-dark'},
-      {label:'UID no registrado', value: uidNotReg.length, cls:'bg-warning text-dark'},
-      {label:'Puerta deshabilitada', value: doorDisabled.length, cls:'bg-secondary'}
+      { label: 'Denegados', value: denied.length, cls: 'bg-danger' },
+      { label: 'Puerta no existe', value: doorNotFound.length, cls: 'bg-warning text-dark' },
+      { label: 'UID no registrado', value: uidNotReg.length, cls: 'bg-warning text-dark' },
+      { label: 'Puerta deshabilitada', value: doorDisabled.length, cls: 'bg-secondary' }
     ];
-    for(const b of badges){
+    for (const b of badges) {
       const el = document.createElement('span');
       el.className = 'badge ' + b.cls;
       el.textContent = `${b.label}: ${b.value}`;
       summary.appendChild(el);
     }
 
-    // Alertas por puerta con denegación repetida (>=3 en ventana)
-    const entries = Object.entries(deniedByDoor).filter(([door,v]) => v.count >= 3);
+    const entries = Object.entries(deniedByDoor).filter(([, v]) => v.count >= 3);
 
-    if(entries.length === 0 && denied.length === 0 && doorNotFound.length === 0 && uidNotReg.length === 0 && doorDisabled.length === 0){
-      const tr = document.createElement('tr');
-      tr.innerHTML = `<td colspan="4" class="text-muted">Sin alertas relevantes en la ventana seleccionada.</td>`;
-      tbody.appendChild(tr);
+    if (!entries.length && !denied.length && !doorNotFound.length && !uidNotReg.length && !doorDisabled.length) {
+      tbody.innerHTML = `<tr><td colspan="4" class="text-muted">Sin alertas relevantes en la ventana seleccionada.</td></tr>`;
       return;
     }
 
-    // Renglones principales
-    for(const [door, v] of entries.sort((a,b)=>b[1].count-a[1].count)){
-      const tr = document.createElement('tr');
-      tr.innerHTML = `
+    for (const [door, v] of entries.sort((a, b) => b[1].count - a[1].count)) {
+      tbody.innerHTML += `<tr>
         <td><span class="badge bg-danger">Denegación repetida</span></td>
-        <td>${escapeHtml(v.count)} denegaciones en últimos ${win} eventos</td>
+        <td>${v.count} denegaciones en últimos ${win} eventos</td>
         <td>${escapeHtml(door)}</td>
-        <td>${escapeHtml(v.last || '')}</td>
-      `;
-      tbody.appendChild(tr);
+        <td style="white-space:nowrap">${fmtTs(v.last)}</td>
+      </tr>`;
     }
 
-    // Otros tipos de alerta resumidos
-    if(doorNotFound.length){
+    if (doorNotFound.length) {
       const last = doorNotFound[0];
-      const tr = document.createElement('tr');
-      tr.innerHTML = `
+      tbody.innerHTML += `<tr>
         <td><span class="badge bg-warning text-dark">Config faltante</span></td>
-        <td>Se detectaron puertas no registradas. Revisa alta de puertas en el sistema.</td>
+        <td>Puertas no registradas. Revisa alta de puertas.</td>
         <td>${escapeHtml(last.door || '')}</td>
-        <td>${escapeHtml(last.ts || '')}</td>
-      `;
-      tbody.appendChild(tr);
+        <td style="white-space:nowrap">${fmtTs(last.ts)}</td>
+      </tr>`;
     }
 
-    if(uidNotReg.length){
+    if (uidNotReg.length) {
       const last = uidNotReg[0];
-      const tr = document.createElement('tr');
-      tr.innerHTML = `
+      tbody.innerHTML += `<tr>
         <td><span class="badge bg-warning text-dark">UID no registrado</span></td>
-        <td>Se detectaron UIDs no dados de alta. Revisa alta de usuarios NFC.</td>
+        <td>UIDs no dados de alta. Revisa alta de usuarios NFC.</td>
         <td>${escapeHtml(last.door || '')}</td>
-        <td>${escapeHtml(last.ts || '')}</td>
-      `;
-      tbody.appendChild(tr);
+        <td style="white-space:nowrap">${fmtTs(last.ts)}</td>
+      </tr>`;
     }
 
-    if(doorDisabled.length){
+    if (doorDisabled.length) {
       const last = doorDisabled[0];
-      const tr = document.createElement('tr');
-      tr.innerHTML = `
+      tbody.innerHTML += `<tr>
         <td><span class="badge bg-secondary">Puerta deshabilitada</span></td>
-        <td>Intentos de acceso con puerta deshabilitada. Revisa estado en sección Puertas.</td>
+        <td>Intentos con puerta deshabilitada.</td>
         <td>${escapeHtml(last.door || '')}</td>
-        <td>${escapeHtml(last.ts || '')}</td>
-      `;
-      tbody.appendChild(tr);
+        <td style="white-space:nowrap">${fmtTs(last.ts)}</td>
+      </tr>`;
     }
 
-  }catch(e){
+  } catch (e) {
     msg.textContent = 'Error al generar alertas: ' + e.message;
   }
 }
 
-function escapeHtml(s){
-  return String(s ?? '')
-    .replaceAll('&','&amp;')
-    .replaceAll('<','&lt;')
-    .replaceAll('>','&gt;')
-    .replaceAll('"','&quot;')
-    .replaceAll("'","&#039;");
-}
-
-async function refreshAll(){
+async function refreshAll() {
   await loadDoors();
   await loadAccessMatrix();
   await loadEvents();
 }
 
-async function init(){
-  const token = sessionStorage.getItem('token');
-  if(!token){ window.location.href='/login'; return; }
+async function init() {
 
+  if (!sessionStorage.getItem('token')) { window.location.href = '/login'; return; }
   await loadMe();
   await loadDoors();
   await loadAccessMatrix();
@@ -656,14 +597,8 @@ async function init(){
 }
 
 init();
-
-// Eventos cada 4s
 setInterval(loadEvents, 4000);
-
-// Puertas cada 20s
 setInterval(loadDoors, 20000);
-
-// Permisos cada 15s
 setInterval(loadAccessMatrix, 15000);
 </script>
 </body>

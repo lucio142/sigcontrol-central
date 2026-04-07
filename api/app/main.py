@@ -1,19 +1,38 @@
-from fastapi import FastAPI, Depends, HTTPException, Request
+from fastapi import FastAPI, Depends, HTTPException, Request, Header
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 from typing import Optional
 
-from app.db import get_db
+from app.db import init_db, get_db
 from app import crud, schemas, models
 from app.security import create_access_token
-from app.deps import get_current_user, require_roles, require_edit_access
+from app.deps import get_current_user, require_roles, require_edit_access, require_device
 from app.config import get_edit_roles
 
 app = FastAPI(title="SigControl Central API")
 
-# ---------- UI (Templates + Static) ----------
+
+def require_enrollment_station(
+    station_name: str,
+    x_station_key: str | None,
+    db: Session,
+):
+    if not x_station_key:
+        raise HTTPException(status_code=401, detail="Missing X-Station-Key")
+
+    ok = crud.verify_enrollment_station_key(db, station_name, x_station_key)
+    if not ok:
+        raise HTTPException(status_code=401, detail="Invalid station credentials")
+
+
+@app.on_event("startup")
+def on_startup():
+    init_db()
+
+
+# ---------- UI ----------
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
 templates = Jinja2Templates(directory="app/templates")
 
@@ -65,7 +84,7 @@ def me(u: models.StaffUser = Depends(get_current_user)):
     )
 
 
-# (Solo admin) crear usuarios staff
+# ---------- Staff ----------
 @app.post("/api/staff", response_model=schemas.MeOut)
 def staff_create(
     payload: schemas.StaffUserCreate,
@@ -94,58 +113,6 @@ def doors_list(
     return crud.list_doors(db)
 
 
-@app.post("/api/doors", response_model=schemas.DoorOut)
-def doors_create(
-    payload: schemas.DoorIn,
-    db: Session = Depends(get_db),
-    _admin: models.StaffUser = Depends(require_roles("admin")),
-):
-    if crud.get_door_by_code(db, payload.door_id):
-        raise HTTPException(status_code=409, detail="door_id already exists")
-    return crud.create_door(db, payload.door_id, payload.name, payload.location, payload.is_enabled)
-
-
-@app.put("/api/doors/{door_id}", response_model=schemas.DoorOut)
-def doors_update(
-    door_id: str,
-    payload: schemas.DoorIn,
-    db: Session = Depends(get_db),
-    _admin: models.StaffUser = Depends(require_roles("admin")),
-):
-    door = crud.get_door_by_code(db, door_id)
-    if not door:
-        raise HTTPException(status_code=404, detail="Door not found")
-    return crud.update_door(db, door, payload.name, payload.location, payload.is_enabled)
-
-
-@app.delete("/api/doors/{door_id}")
-def doors_delete(
-    door_id: str,
-    db: Session = Depends(get_db),
-    _admin: models.StaffUser = Depends(require_roles("admin")),
-):
-    door = crud.get_door_by_code(db, door_id)
-    if not door:
-        raise HTTPException(status_code=404, detail="Door not found")
-    crud.delete_door(db, door)
-    return {"ok": True}
-
-
-# Guardar coordenadas en mapa (escala 0..1)
-@app.post("/api/doors/{door_id}/coords", response_model=schemas.DoorOut)
-def door_update_coords(
-    door_id: str,
-    payload: schemas.DoorCoordsIn,
-    db: Session = Depends(get_db),
-    _u: models.StaffUser = Depends(require_edit_access()),
-):
-    door = crud.get_door_by_code(db, door_id)
-    if not door:
-        raise HTTPException(status_code=404, detail="Door not found")
-    return crud.update_door_coords(db, door, payload.x, payload.y)
-
-
-# ✅ Status/alertas para mapa 3D
 @app.get("/api/doors/status", response_model=list[schemas.DoorStatusOut])
 def doors_status(
     db: Session = Depends(get_db),
@@ -156,7 +123,14 @@ def doors_status(
 
     for d in doors:
         last = crud.get_last_event_by_door(db, d.door_id)
-        alert, last_ts, last_result, last_details = crud.compute_door_alert(d, last)
+        dk = crud.get_device_key_any_status(db, d.door_id)
+        device_last_seen = dk.last_seen if dk else None
+
+        alert, last_ts, last_result, last_details = crud.compute_door_alert(
+            d,
+            last,
+            device_last_seen=device_last_seen,
+        )
 
         out.append(
             schemas.DoorStatusOut(
@@ -177,7 +151,77 @@ def doors_status(
     return out
 
 
-# ---------- NFC Users (globales) ----------
+@app.post("/api/doors", response_model=schemas.DoorOut)
+def doors_create(
+    payload: schemas.DoorIn,
+    db: Session = Depends(get_db),
+    _admin: models.StaffUser = Depends(require_roles("admin")),
+):
+    if crud.get_door_by_code(db, payload.door_id):
+        raise HTTPException(status_code=409, detail="door_id already exists")
+
+    return crud.create_door(
+        db,
+        payload.door_id,
+        payload.name,
+        payload.location,
+        payload.is_enabled,
+        payload.site,
+        payload.x,
+        payload.y,
+    )
+
+
+@app.put("/api/doors/{door_id}", response_model=schemas.DoorOut)
+def doors_update(
+    door_id: str,
+    payload: schemas.DoorIn,
+    db: Session = Depends(get_db),
+    _admin: models.StaffUser = Depends(require_roles("admin")),
+):
+    door = crud.get_door_by_code(db, door_id)
+    if not door:
+        raise HTTPException(status_code=404, detail="Door not found")
+
+    return crud.update_door(
+        db,
+        door,
+        payload.name,
+        payload.location,
+        payload.is_enabled,
+        payload.site,
+        payload.x,
+        payload.y,
+    )
+
+
+@app.delete("/api/doors/{door_id}")
+def doors_delete(
+    door_id: str,
+    db: Session = Depends(get_db),
+    _admin: models.StaffUser = Depends(require_roles("admin")),
+):
+    door = crud.get_door_by_code(db, door_id)
+    if not door:
+        raise HTTPException(status_code=404, detail="Door not found")
+    crud.delete_door(db, door)
+    return {"ok": True}
+
+
+@app.post("/api/doors/{door_id}/coords", response_model=schemas.DoorOut)
+def door_update_coords(
+    door_id: str,
+    payload: schemas.DoorCoordsIn,
+    db: Session = Depends(get_db),
+    _u: models.StaffUser = Depends(require_edit_access()),
+):
+    door = crud.get_door_by_code(db, door_id)
+    if not door:
+        raise HTTPException(status_code=404, detail="Door not found")
+    return crud.update_door_coords(db, door, payload.x, payload.y)
+
+
+# ---------- NFC Users ----------
 @app.get("/api/nfc-users", response_model=list[schemas.NfcUserOut])
 def nfc_users_list(
     db: Session = Depends(get_db),
@@ -237,6 +281,219 @@ def nfc_users_delete(
     return {"ok": True}
 
 
+# ---------- NFC Credentials ----------
+@app.get("/api/nfc-credentials/by-user/{nfc_user_id}", response_model=list[schemas.NfcCredentialOut])
+def nfc_credentials_by_user(
+    nfc_user_id: int,
+    db: Session = Depends(get_db),
+    _u: models.StaffUser = Depends(require_roles("admin", "seguridad", "sistemas", "hsc")),
+):
+    user = db.query(models.NfcUser).filter(models.NfcUser.id == nfc_user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="NFC user not found")
+
+    return crud.list_nfc_credentials_by_user(db, nfc_user_id)
+
+
+@app.post("/api/nfc-credentials", response_model=schemas.NfcCredentialOut)
+def nfc_credential_create(
+    payload: schemas.NfcCredentialCreate,
+    db: Session = Depends(get_db),
+    _u: models.StaffUser = Depends(require_roles("admin", "seguridad", "sistemas")),
+):
+    user = db.query(models.NfcUser).filter(models.NfcUser.id == payload.nfc_user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="NFC user not found")
+
+    uid = crud.normalize_uid(payload.uid_hex)
+
+    existing_cred = crud.get_nfc_credential_by_uid(db, uid)
+    if existing_cred:
+        raise HTTPException(status_code=409, detail="UID already exists in credentials")
+
+    existing_user = db.query(models.NfcUser).filter(models.NfcUser.uid_hex == uid).first()
+    if existing_user:
+        raise HTTPException(status_code=409, detail="UID already exists in legacy nfc_users")
+
+    cred = crud.create_nfc_credential(
+        db,
+        nfc_user_id=payload.nfc_user_id,
+        uid_hex=uid,
+        tag_type=payload.tag_type,
+        is_active=payload.is_active,
+    )
+
+    crud.log_event(
+        db,
+        type="enroll",
+        door="",
+        uid=cred.uid_hex,
+        name=user.full_name,
+        result="ok",
+        details=f"credential_created:{cred.tag_type}",
+    )
+
+    return cred
+
+
+@app.put("/api/nfc-credentials/{credential_id}", response_model=schemas.NfcCredentialOut)
+def nfc_credential_update(
+    credential_id: int,
+    payload: schemas.NfcCredentialUpdate,
+    db: Session = Depends(get_db),
+    _u: models.StaffUser = Depends(require_roles("admin", "seguridad", "sistemas")),
+):
+    cred = db.query(models.NfcCredential).filter(models.NfcCredential.id == credential_id).first()
+    if not cred:
+        raise HTTPException(status_code=404, detail="Credential not found")
+
+    cred = crud.update_nfc_credential(
+        db,
+        cred,
+        tag_type=payload.tag_type,
+        is_active=payload.is_active,
+    )
+
+    return cred
+
+
+@app.delete("/api/nfc-credentials/{credential_id}")
+def nfc_credential_delete(
+    credential_id: int,
+    db: Session = Depends(get_db),
+    _u: models.StaffUser = Depends(require_roles("admin", "seguridad", "sistemas")),
+):
+    cred = db.query(models.NfcCredential).filter(models.NfcCredential.id == credential_id).first()
+    if not cred:
+        raise HTTPException(status_code=404, detail="Credential not found")
+
+    crud.delete_nfc_credential(db, cred)
+    return {"ok": True}
+
+
+# ---------- Enrollment Station Keys ----------
+@app.post("/api/enrollment-station-keys", response_model=schemas.EnrollmentStationKeyOut)
+def enrollment_station_key_create(
+    payload: schemas.EnrollmentStationKeyCreate,
+    db: Session = Depends(get_db),
+    _u: models.StaffUser = Depends(require_roles("admin", "sistemas")),
+):
+    obj = crud.create_enrollment_station_key(
+        db,
+        station_name=payload.station_name,
+        raw_key=payload.raw_key,
+        description=payload.description,
+    )
+    return obj
+
+
+# ---------- Enrollment ----------
+@app.post("/api/enrollment/start", response_model=schemas.EnrollmentSessionOut)
+def enrollment_start(
+    payload: schemas.EnrollmentStartIn,
+    db: Session = Depends(get_db),
+    u: models.StaffUser = Depends(require_roles("admin", "seguridad", "sistemas")),
+):
+    session_obj = crud.create_enrollment_session(
+        db,
+        station_name=payload.station_name,
+        requested_by_id=u.id,
+        tag_type=payload.tag_type,
+    )
+
+    crud.log_event(
+        db,
+        type="enroll_start",
+        door="",
+        uid="",
+        name=u.email,
+        result="pending",
+        details=f"station={session_obj.station_name};tag_type={session_obj.tag_type};session_id={session_obj.id}",
+    )
+
+    return session_obj
+
+
+@app.get("/api/enrollment/pending", response_model=schemas.EnrollmentSessionOut | None)
+def enrollment_pending(
+    station_name: str = "main",
+    x_station_key: str | None = Header(default=None),
+    db: Session = Depends(get_db),
+):
+    require_enrollment_station(station_name, x_station_key, db)
+    return crud.get_pending_enrollment_session(db, station_name=station_name)
+
+
+@app.post("/api/enrollment/report", response_model=schemas.EnrollmentSessionOut)
+def enrollment_report(
+    payload: schemas.EnrollmentReportIn,
+    station_name: str,
+    x_station_key: str | None = Header(default=None),
+    db: Session = Depends(get_db),
+):
+    require_enrollment_station(station_name, x_station_key, db)
+
+    session_obj = crud.get_enrollment_session(db, payload.session_id)
+    if not session_obj:
+        raise HTTPException(status_code=404, detail="Enrollment session not found")
+
+    if session_obj.station_name != station_name:
+        raise HTTPException(status_code=403, detail="Station mismatch")
+
+    if session_obj.status != "pending":
+        raise HTTPException(status_code=409, detail="Enrollment session is not pending")
+
+    uid = crud.normalize_uid(payload.uid_hex)
+
+    existing_cred = crud.get_nfc_credential_by_uid(db, uid)
+    if existing_cred:
+        raise HTTPException(status_code=409, detail="UID already exists in credentials")
+
+    existing_user = db.query(models.NfcUser).filter(models.NfcUser.uid_hex == uid).first()
+    if existing_user:
+        raise HTTPException(status_code=409, detail="UID already exists in legacy nfc_users")
+
+    session_obj = crud.report_enrollment_uid(db, session_obj, uid)
+
+    crud.log_event(
+        db,
+        type="enroll_read",
+        door="",
+        uid=session_obj.uid_hex,
+        name="",
+        result="ok",
+        details=f"station={session_obj.station_name};tag_type={session_obj.tag_type};session_id={session_obj.id}",
+    )
+
+    return session_obj
+
+
+@app.get("/api/enrollment/{session_id}", response_model=schemas.EnrollmentSessionOut)
+def enrollment_get(
+    session_id: int,
+    db: Session = Depends(get_db),
+    _u: models.StaffUser = Depends(require_roles("admin", "seguridad", "sistemas", "hsc")),
+):
+    session_obj = crud.get_enrollment_session(db, session_id)
+    if not session_obj:
+        raise HTTPException(status_code=404, detail="Enrollment session not found")
+    return session_obj
+
+
+@app.post("/api/enrollment/{session_id}/consume", response_model=schemas.EnrollmentSessionOut)
+def enrollment_consume(
+    session_id: int,
+    db: Session = Depends(get_db),
+    _u: models.StaffUser = Depends(require_roles("admin", "seguridad", "sistemas")),
+):
+    session_obj = crud.get_enrollment_session(db, session_id)
+    if not session_obj:
+        raise HTTPException(status_code=404, detail="Enrollment session not found")
+
+    session_obj = crud.consume_enrollment_session(db, session_obj)
+    return session_obj
+
+
 # ---------- Door Access Matrix ----------
 @app.get("/api/door-access", response_model=list[schemas.DoorAccessRowOut])
 def door_access_list(
@@ -262,7 +519,6 @@ def door_access_set(
     user = crud.get_nfc_user_by_uid(db, payload.uid_hex)
     if not user:
         raise HTTPException(status_code=404, detail="NFC user not found")
-
     crud.allow_nfc_for_door(db, door.id, user.id, payload.is_allowed)
     return {"ok": True, "is_allowed": bool(payload.is_allowed)}
 
@@ -279,48 +535,87 @@ def door_access_toggle(
     user = crud.get_nfc_user_by_uid(db, payload.uid_hex)
     if not user:
         raise HTTPException(status_code=404, detail="NFC user not found")
-
     current = crud.is_nfc_allowed_for_door(db, door.id, user.id)
     crud.allow_nfc_for_door(db, door.id, user.id, not current)
     return {"ok": True, "is_allowed": (not current)}
 
 
+# ---------- ESP32: heartbeat ----------
+@app.post("/api/devices/heartbeat")
+def device_heartbeat(
+    door: models.Door = Depends(require_device),
+    db: Session = Depends(get_db),
+):
+    crud.touch_device_last_seen(db, door.door_id)
+    return {"ok": True, "door_id": door.door_id}
 
-# ---------- ESP32 endpoint: access check ----------
+
+# ---------- ESP32: access check ----------
 @app.post("/api/access/check", response_model=schemas.AccessCheckOut)
-def access_check(payload: schemas.AccessCheckIn, db: Session = Depends(get_db)):
+def access_check(
+    payload: schemas.AccessCheckIn,
+    door: models.Door = Depends(require_device),
+    db: Session = Depends(get_db),
+):
     uid = crud.normalize_uid(payload.uid)
     door_code = payload.door_id.strip()
 
-    door = crud.get_door_by_code(db, door_code)
-    if not door:
-        crud.log_event(db, "access", door_code, uid, "", "denied", "door_not_found")
-        return schemas.AccessCheckOut(allowed=False, reason="door_not_found", door_id=door_code, uid=uid, user_name=None)
+    if door_code != door.door_id:
+        raise HTTPException(status_code=403, detail="Door mismatch")
 
     if not door.is_enabled:
         crud.log_event(db, "access", door_code, uid, "", "denied", "door_disabled")
-        return schemas.AccessCheckOut(allowed=False, reason="door_disabled", door_id=door_code, uid=uid, user_name=None)
+        return schemas.AccessCheckOut(
+            allowed=False,
+            reason="door_disabled",
+            door_id=door_code,
+            uid=uid,
+            user_name=None,
+        )
 
     user = crud.get_nfc_user_by_uid(db, uid)
     if not user:
         crud.log_event(db, "access", door_code, uid, "", "denied", "uid_not_registered")
-        return schemas.AccessCheckOut(allowed=False, reason="uid_not_registered", door_id=door_code, uid=uid, user_name=None)
+        return schemas.AccessCheckOut(
+            allowed=False,
+            reason="uid_not_registered",
+            door_id=door_code,
+            uid=uid,
+            user_name=None,
+        )
 
     if not user.is_active:
         crud.log_event(db, "access", door_code, uid, user.full_name, "denied", "user_inactive")
-        return schemas.AccessCheckOut(allowed=False, reason="user_inactive", door_id=door_code, uid=uid, user_name=user.full_name)
+        return schemas.AccessCheckOut(
+            allowed=False,
+            reason="user_inactive",
+            door_id=door_code,
+            uid=uid,
+            user_name=user.full_name,
+        )
 
     allowed = crud.is_nfc_allowed_for_door(db, door.id, user.id)
     if allowed:
         crud.log_event(db, "access", door_code, uid, user.full_name, "granted", "ok")
-        return schemas.AccessCheckOut(allowed=True, reason="granted", door_id=door_code, uid=uid, user_name=user.full_name)
+        return schemas.AccessCheckOut(
+            allowed=True,
+            reason="granted",
+            door_id=door_code,
+            uid=uid,
+            user_name=user.full_name,
+        )
 
     crud.log_event(db, "access", door_code, uid, user.full_name, "denied", "no_permission")
-    return schemas.AccessCheckOut(allowed=False, reason="no_permission", door_id=door_code, uid=uid, user_name=user.full_name)
+    return schemas.AccessCheckOut(
+        allowed=False,
+        reason="no_permission",
+        door_id=door_code,
+        uid=uid,
+        user_name=user.full_name,
+    )
 
 
 # ---------- Logs ----------
-# ✅ permite filtrar por puerta con ?door_id=D-001
 @app.get("/api/events", response_model=list[schemas.EventOut])
 def events_list(
     limit: int = 200,
@@ -331,3 +626,58 @@ def events_list(
     if door_id:
         return crud.list_events_by_door(db, door_id=door_id, limit=limit)
     return crud.list_events(db, limit=limit)
+
+
+# ---------- Device Keys ----------
+@app.get("/api/device-keys", response_model=list[schemas.DeviceKeyOut])
+def device_keys_list(
+    db: Session = Depends(get_db),
+    _admin: models.StaffUser = Depends(require_roles("admin", "sistemas")),
+):
+    return crud.list_device_keys(db)
+
+
+@app.post("/api/device-keys")
+def device_keys_create(
+    payload: schemas.DeviceKeyCreate,
+    db: Session = Depends(get_db),
+    _admin: models.StaffUser = Depends(require_roles("admin", "sistemas")),
+):
+    door = crud.get_door_by_code(db, payload.door_id)
+    if not door:
+        raise HTTPException(status_code=404, detail="Door not found")
+
+    crud.create_device_key(
+        db,
+        payload.door_id,
+        payload.raw_key,
+        payload.description,
+    )
+
+    return {"ok": True}
+
+
+@app.delete("/api/device-keys/{door_id}")
+def device_keys_delete(
+    door_id: str,
+    db: Session = Depends(get_db),
+    _admin: models.StaffUser = Depends(require_roles("admin", "sistemas")),
+):
+    ok = crud.delete_device_key(db, door_id)
+    if not ok:
+        raise HTTPException(status_code=404, detail="Device key not found")
+
+    return {"ok": True}
+
+
+@app.post("/api/device-keys/{door_id}/toggle")
+def device_keys_toggle(
+    door_id: str,
+    db: Session = Depends(get_db),
+    _admin: models.StaffUser = Depends(require_roles("admin", "sistemas")),
+):
+    dk = crud.toggle_device_key(db, door_id)
+    if not dk:
+        raise HTTPException(status_code=404, detail="Device key not found")
+
+    return {"ok": True, "is_active": dk.is_active}

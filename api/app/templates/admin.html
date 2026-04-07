@@ -20,6 +20,7 @@
     <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#doors">Puertas</button></li>
     <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#users">Usuarios NFC</button></li>
     <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#access">Permisos</button></li>
+    <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#devices">Dispositivos ESP32</button></li>
   </ul>
 
   <div class="tab-content pt-3">
@@ -76,7 +77,7 @@
         <div class="col-lg-4">
           <div class="card">
             <div class="card-body">
-              <h6>Crear usuario NFC</h6>
+              <h6 id="user_form_title">Crear usuario NFC</h6>
               <div class="mb-2">
                 <label class="form-label">UID (hex)</label>
                 <input id="u_uid" class="form-control" placeholder="04A1B2C3D4">
@@ -93,7 +94,10 @@
                 <input id="u_active" class="form-check-input" type="checkbox" checked>
                 <label class="form-check-label">Activo</label>
               </div>
-              <button class="btn btn-primary w-100" onclick="createUser()">Guardar</button>
+              <div class="d-flex gap-2">
+                <button id="user_save_btn" class="btn btn-primary w-100" onclick="createUser()">Guardar</button>
+                <button id="user_cancel_btn" class="btn btn-outline-secondary" style="display:none" onclick="resetUserForm()">Cancelar</button>
+              </div>
               <div id="user_msg" class="small text-danger mt-2"></div>
             </div>
           </div>
@@ -107,7 +111,7 @@
           <div class="table-responsive">
             <table class="table table-striped align-middle">
               <thead>
-                <tr><th>ID</th><th>UID</th><th>Nombre</th><th>No. empleado</th><th>Activo</th></tr>
+                <tr><th>ID</th><th>UID</th><th>Nombre</th><th>No. empleado</th><th>Activo</th><th></th></tr>
               </thead>
               <tbody id="users_rows"></tbody>
             </table>
@@ -119,7 +123,7 @@
     <!-- PERMISOS -->
     <div class="tab-pane fade" id="access">
       <div class="row g-3">
-        <div class="col-lg-5">
+        <div class="col-lg-4">
           <div class="card">
             <div class="card-body">
               <h6>Asignar permiso</h6>
@@ -136,20 +140,94 @@
                 <label class="form-check-label">Permitido</label>
               </div>
               <button class="btn btn-primary w-100" onclick="setAccess()">Guardar permiso</button>
-              <div id="acc_msg" class="small text-danger mt-2"></div>
-              <div class="small text-muted mt-2">
-                Nota: esto llama a <code>/api/door-access/set</code>.
-              </div>
+              <div id="acc_msg" class="small mt-2"></div>
             </div>
           </div>
         </div>
 
-        <div class="col-lg-7">
-          <div class="alert alert-secondary">
-            Para la “matriz completa” (ver quién tiene acceso a qué) te armo el endpoint <code>/api/door-access</code> de lectura.
-            Por ahora esto sirve para asignar rápido.
+        <div class="col-lg-8">
+          <div class="card">
+            <div class="card-body">
+              <div class="d-flex justify-content-between align-items-center mb-2">
+                <h6 class="m-0">Permisos asignados</h6>
+                <button class="btn btn-secondary btn-sm" onclick="loadAccessMatrix()">Actualizar</button>
+              </div>
+              <div class="table-responsive">
+                <table class="table table-sm table-striped align-middle">
+                  <thead>
+                    <tr><th>Puerta</th><th>UID</th><th>Nombre</th><th>Acceso</th><th></th></tr>
+                  </thead>
+                  <tbody id="access_rows"></tbody>
+                </table>
+              </div>
+              <div id="access_msg" class="small text-danger"></div>
+            </div>
           </div>
         </div>
+      </div>
+    </div>
+
+    <!-- DISPOSITIVOS ESP32 -->
+    <div class="tab-pane fade" id="devices">
+      <div class="row g-3">
+
+        <div class="col-lg-4">
+          <div class="card">
+            <div class="card-body">
+              <h6>Registrar ESP32</h6>
+
+              <div class="mb-2">
+                <label class="form-label">Puerta</label>
+                <select id="dev_door" class="form-select"></select>
+              </div>
+
+              <div class="mb-2">
+                <label class="form-label">Clave</label>
+                <input id="dev_key" class="form-control" placeholder="clave segura">
+              </div>
+
+              <div class="mb-2">
+                <label class="form-label">Descripción</label>
+                <input id="dev_desc" class="form-control" placeholder="ESP32 puerta principal">
+              </div>
+
+              <button class="btn btn-primary w-100" onclick="createDevice()">Registrar</button>
+              <div id="dev_msg" class="small mt-2"></div>
+
+            </div>
+          </div>
+        </div>
+
+        <div class="col-lg-8">
+          <div class="card">
+            <div class="card-body">
+
+              <div class="d-flex justify-content-between mb-2">
+                <h6 class="m-0">Dispositivos registrados</h6>
+                <button class="btn btn-secondary btn-sm" onclick="loadDevices()">Actualizar</button>
+              </div>
+
+              <div class="table-responsive">
+                <table class="table table-striped">
+                  <thead>
+                    <tr>
+                      <th>Puerta</th>
+                      <th>Descripción</th>
+                      <th>Activo</th>
+                      <th>Último seen</th>
+                      <th></th>
+                    </tr>
+                  </thead>
+                  <tbody id="devices_rows"></tbody>
+                </table>
+              </div>
+
+              <div id="devices_msg" class="small text-danger mt-2"></div>
+
+            </div>
+          </div>
+        </div>
+
       </div>
     </div>
 
@@ -158,40 +236,63 @@
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-function token(){
-  return sessionStorage.getItem('token');
-}
-function mustAuth(){
-  if(!token()){ window.location.href='/login'; return false; }
-  return true;
-}
-function logout(){
-  sessionStorage.removeItem('token');
-  window.location.href='/login';
-}
-async function api(path, opts={}){
-  if(!mustAuth()) return null;
-  opts.headers = opts.headers || {};
-  opts.headers['Authorization'] = 'Bearer ' + token();
-  if(opts.json){
-    opts.headers['Content-Type'] = 'application/json';
-    opts.body = JSON.stringify(opts.json);
-    delete opts.json;
+async function api(path, opts = {}) {
+  const token = sessionStorage.getItem('token');
+  if (!token) { window.location.href = '/login'; return; }
+
+  const headers = { 'Authorization': 'Bearer ' + token, ...(opts.headers || {}) };
+  const method = (opts.method || 'GET').toUpperCase();
+  if (['POST', 'PUT', 'PATCH'].includes(method)) {
+    headers['Content-Type'] = 'application/json';
   }
-  const r = await fetch(path, opts);
-  if(!r.ok){
-    let t = '';
-    try { t = (await r.json()).detail || r.statusText; } catch(e){ t = r.statusText; }
-    throw new Error(t);
+
+  const r = await fetch(path, { ...opts, headers });
+
+  if (r.status === 401) {
+    sessionStorage.removeItem('token');
+    window.location.href = '/login';
+    return;
   }
-  return r.status === 204 ? null : await r.json();
+
+  if (!r.ok) {
+    let detail = '';
+    try { detail = (await r.json()).detail || r.statusText; } catch { detail = r.statusText; }
+    throw new Error(detail);
+  }
+
+  const ct = r.headers.get('content-type') || '';
+  return ct.includes('application/json') ? r.json() : r.text();
 }
 
-async function loadDoors(){
+function logout() {
+  sessionStorage.removeItem('token');
+  window.location.href = '/login';
+}
+
+function fmtTs(raw) {
+  if (!raw) return '—';
+  try {
+    return new Date(raw).toLocaleString('es-MX', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit'
+    });
+  } catch {
+    return raw;
+  }
+}
+
+/* ========================= PUERTAS ========================= */
+async function loadDoors() {
   const rows = document.getElementById('doors_rows');
   rows.innerHTML = '';
+
   const data = await api('/api/doors');
-  for(const d of data){
+
+  for (const d of data) {
     const tr = document.createElement('tr');
     tr.innerHTML = `
       <td>${d.id}</td>
@@ -203,37 +304,59 @@ async function loadDoors(){
     `;
     rows.appendChild(tr);
   }
-  // refresca selects de permisos
-  const sel = document.getElementById('a_door');
-  sel.innerHTML = data.map(x => `<option value="${x.door_id}">${x.door_id} - ${x.name||''}</option>`).join('');
+
+  const doorOptions = data.map(x => `<option value="${x.door_id}">${x.door_id} - ${x.name || ''}</option>`).join('');
+
+  const accessSel = document.getElementById('a_door');
+  if (accessSel) accessSel.innerHTML = doorOptions;
+
+  const devSel = document.getElementById('dev_door');
+  if (devSel) devSel.innerHTML = doorOptions;
 }
 
-async function createDoor(){
+async function createDoor() {
   document.getElementById('door_msg').innerText = '';
-  try{
-    await api('/api/doors', {method:'POST', json:{
-      door_id: document.getElementById('door_id').value.trim(),
-      name: document.getElementById('door_name').value.trim(),
-      location: document.getElementById('door_loc').value.trim(),
-      is_enabled: document.getElementById('door_enabled').checked
-    }});
+  try {
+    await api('/api/doors', {
+      method: 'POST',
+      body: JSON.stringify({
+        door_id: document.getElementById('door_id').value.trim(),
+        name: document.getElementById('door_name').value.trim(),
+        location: document.getElementById('door_loc').value.trim(),
+        is_enabled: document.getElementById('door_enabled').checked
+      })
+    });
+    document.getElementById('door_id').value = '';
+    document.getElementById('door_name').value = '';
+    document.getElementById('door_loc').value = '';
+    document.getElementById('door_enabled').checked = true;
     await loadDoors();
-  }catch(e){ document.getElementById('door_msg').innerText = e.message; }
+  } catch (e) {
+    document.getElementById('door_msg').innerText = e.message;
+  }
 }
 
-async function delDoor(door_id){
-  if(!confirm('¿Eliminar puerta '+door_id+'?')) return;
-  try{
-    await api('/api/doors/' + encodeURIComponent(door_id), {method:'DELETE'});
+async function delDoor(door_id) {
+  if (!confirm('¿Eliminar puerta ' + door_id + '?')) return;
+  try {
+    await api('/api/doors/' + encodeURIComponent(door_id), { method: 'DELETE' });
     await loadDoors();
-  }catch(e){ alert(e.message); }
+    await loadDevices();
+  } catch (e) {
+    alert(e.message);
+  }
 }
 
-async function loadUsers(){
+/* ========================= USUARIOS NFC ========================= */
+async function loadUsers() {
   const rows = document.getElementById('users_rows');
   rows.innerHTML = '';
   const data = await api('/api/nfc-users');
-  for(const u of data){
+
+  for (const u of data) {
+    const safeName = String(u.full_name || '').replace(/'/g, "\\'");
+    const safeEmp = String(u.employee_number || '').replace(/'/g, "\\'");
+
     const tr = document.createElement('tr');
     tr.innerHTML = `
       <td>${u.id}</td>
@@ -241,44 +364,272 @@ async function loadUsers(){
       <td>${u.full_name}</td>
       <td>${u.employee_number || ''}</td>
       <td>${u.is_active ? '✅' : '❌'}</td>
+      <td>
+        <button class="btn btn-sm btn-outline-secondary"
+          onclick="editUser('${u.uid_hex}','${safeName}','${safeEmp}',${u.is_active})">
+          Editar
+        </button>
+      </td>
     `;
     rows.appendChild(tr);
   }
-  // refresca selects de permisos
+
   const sel = document.getElementById('a_uid');
   sel.innerHTML = data.map(x => `<option value="${x.uid_hex}">${x.uid_hex} - ${x.full_name}</option>`).join('');
 }
 
-async function createUser(){
+function editUser(uid_hex, full_name, employee_number, is_active) {
+  document.getElementById('user_form_title').textContent = 'Editar usuario NFC';
+  document.getElementById('u_uid').value = uid_hex;
+  document.getElementById('u_uid').disabled = true;
+  document.getElementById('u_name').value = full_name;
+  document.getElementById('u_emp').value = employee_number;
+  document.getElementById('u_active').checked = is_active;
+  document.getElementById('user_save_btn').textContent = 'Actualizar';
+  document.getElementById('user_save_btn').onclick = () => updateUser(uid_hex);
+  document.getElementById('user_cancel_btn').style.display = 'inline-block';
+}
+
+function resetUserForm() {
+  document.getElementById('user_form_title').textContent = 'Crear usuario NFC';
+  document.getElementById('u_uid').disabled = false;
+  ['u_uid', 'u_name', 'u_emp'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('u_active').checked = true;
+  document.getElementById('user_save_btn').textContent = 'Guardar';
+  document.getElementById('user_save_btn').onclick = createUser;
+  document.getElementById('user_cancel_btn').style.display = 'none';
   document.getElementById('user_msg').innerText = '';
-  try{
-    await api('/api/nfc-users', {method:'POST', json:{
-      uid_hex: document.getElementById('u_uid').value.trim(),
-      full_name: document.getElementById('u_name').value.trim(),
-      employee_number: document.getElementById('u_emp').value.trim(),
-      is_active: document.getElementById('u_active').checked
-    }});
+}
+
+async function updateUser(uid_hex) {
+  document.getElementById('user_msg').innerText = '';
+  try {
+    await api('/api/nfc-users/' + encodeURIComponent(uid_hex), {
+      method: 'PUT',
+      body: JSON.stringify({
+        uid_hex,
+        full_name: document.getElementById('u_name').value.trim(),
+        employee_number: document.getElementById('u_emp').value.trim(),
+        is_active: document.getElementById('u_active').checked
+      })
+    });
+    resetUserForm();
     await loadUsers();
-  }catch(e){ document.getElementById('user_msg').innerText = e.message; }
+  } catch (e) {
+    document.getElementById('user_msg').innerText = e.message;
+  }
 }
 
-async function setAccess(){
-  document.getElementById('acc_msg').innerText = '';
-  try{
-    await api('/api/door-access/set', {method:'POST', json:{
-      door_id: document.getElementById('a_door').value,
-      uid_hex: document.getElementById('a_uid').value,
-      is_allowed: document.getElementById('a_allowed').checked
-    }});
-    document.getElementById('acc_msg').innerText = '✅ Guardado';
-    setTimeout(()=>document.getElementById('acc_msg').innerText='', 1500);
-  }catch(e){ document.getElementById('acc_msg').innerText = e.message; }
+async function createUser() {
+  document.getElementById('user_msg').innerText = '';
+  try {
+    await api('/api/nfc-users', {
+      method: 'POST',
+      body: JSON.stringify({
+        uid_hex: document.getElementById('u_uid').value.trim(),
+        full_name: document.getElementById('u_name').value.trim(),
+        employee_number: document.getElementById('u_emp').value.trim(),
+        is_active: document.getElementById('u_active').checked
+      })
+    });
+    resetUserForm();
+    await loadUsers();
+  } catch (e) {
+    document.getElementById('user_msg').innerText = e.message;
+  }
 }
 
-(async function init(){
-  if(!mustAuth()) return;
+/* ========================= PERMISOS ========================= */
+async function loadAccessMatrix() {
+  const tbody = document.getElementById('access_rows');
+  tbody.innerHTML = '';
+  const msg = document.getElementById('access_msg');
+  msg.textContent = '';
+
+  try {
+    const data = await api('/api/door-access');
+    for (const r of data) {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td><code>${r.door_id}</code></td>
+        <td><code>${r.uid_hex}</code></td>
+        <td>${r.full_name}</td>
+        <td><span class="badge ${r.is_allowed ? 'bg-success' : 'bg-danger'}">${r.is_allowed ? 'Permitido' : 'Denegado'}</span></td>
+        <td><button class="btn btn-sm btn-outline-warning" onclick="toggleAccess('${r.door_id}','${r.uid_hex}')">Toggle</button></td>
+      `;
+      tbody.appendChild(tr);
+    }
+    if (!data.length) msg.textContent = 'Sin permisos asignados aún.';
+  } catch (e) {
+    msg.textContent = 'Error: ' + e.message;
+  }
+}
+
+async function toggleAccess(door_id, uid_hex) {
+  try {
+    await api('/api/door-access/toggle', {
+      method: 'POST',
+      body: JSON.stringify({ door_id, uid_hex, is_allowed: true })
+    });
+    await loadAccessMatrix();
+  } catch (e) {
+    alert(e.message);
+  }
+}
+
+async function setAccess() {
+  const msg = document.getElementById('acc_msg');
+  msg.className = 'small mt-2';
+  msg.innerText = '';
+
+  try {
+    await api('/api/door-access/set', {
+      method: 'POST',
+      body: JSON.stringify({
+        door_id: document.getElementById('a_door').value,
+        uid_hex: document.getElementById('a_uid').value,
+        is_allowed: document.getElementById('a_allowed').checked
+      })
+    });
+    msg.className = 'small mt-2 text-success';
+    msg.innerText = '✅ Guardado';
+    setTimeout(() => { msg.innerText = ''; }, 1500);
+    await loadAccessMatrix();
+  } catch (e) {
+    msg.className = 'small mt-2 text-danger';
+    msg.innerText = e.message;
+  }
+}
+
+/* ========================= DISPOSITIVOS ESP32 ========================= */
+async function loadDevices() {
+  const rows = document.getElementById('devices_rows');
+  const msg = document.getElementById('devices_msg');
+  rows.innerHTML = '';
+  msg.textContent = '';
+
+  try {
+    const data = await api('/api/device-keys');
+
+    for (const d of data) {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td><code>${d.door_id}</code></td>
+        <td>${d.description || ''}</td>
+        <td>${d.is_active ? '✅' : '❌'}</td>
+        <td>${fmtTs(d.last_seen)}</td>
+        <td class="d-flex gap-2">
+          <button class="btn btn-sm btn-outline-warning" onclick="toggleDevice('${d.door_id}')">Toggle</button>
+          <button class="btn btn-sm btn-outline-danger" onclick="deleteDevice('${d.door_id}')">Eliminar</button>
+        </td>
+      `;
+      rows.appendChild(tr);
+    }
+
+    if (!data.length) {
+      msg.textContent = 'Sin dispositivos registrados aún.';
+    }
+  } catch (e) {
+    msg.textContent = 'Error: ' + e.message;
+  }
+}
+
+async function createDevice() {
+  const msg = document.getElementById('dev_msg');
+  msg.className = 'small mt-2';
+  msg.innerText = '';
+
+  try {
+    const door_id = document.getElementById('dev_door').value;
+    const raw_key = document.getElementById('dev_key').value.trim();
+    const description = document.getElementById('dev_desc').value.trim();
+
+    if (!door_id) {
+      msg.className = 'small mt-2 text-danger';
+      msg.innerText = 'Selecciona una puerta.';
+      return;
+    }
+
+    if (!raw_key) {
+      msg.className = 'small mt-2 text-danger';
+      msg.innerText = 'La clave es obligatoria.';
+      return;
+    }
+
+    await api('/api/device-keys', {
+      method: 'POST',
+      body: JSON.stringify({ door_id, raw_key, description })
+    });
+
+    document.getElementById('dev_key').value = '';
+    document.getElementById('dev_desc').value = '';
+
+    msg.className = 'small mt-2 text-success';
+    msg.innerText = '✅ Dispositivo registrado';
+
+    await loadDevices();
+  } catch (e) {
+    msg.className = 'small mt-2 text-danger';
+    msg.innerText = e.message;
+  }
+}
+
+async function deleteDevice(door_id) {
+  if (!confirm('¿Eliminar dispositivo de ' + door_id + '?')) return;
+
+  try {
+    await api('/api/device-keys/' + encodeURIComponent(door_id), {
+      method: 'DELETE'
+    });
+    await loadDevices();
+  } catch (e) {
+    alert(e.message);
+  }
+}
+
+async function toggleDevice(door_id) {
+  try {
+    await api('/api/device-keys/' + encodeURIComponent(door_id) + '/toggle', {
+      method: 'POST'
+    });
+    await loadDevices();
+  } catch (e) {
+    alert(e.message);
+  }
+}
+
+async function requireAdminPage() {
+  const token = sessionStorage.getItem('token');
+  if (!token) {
+    window.location.href = '/login';
+    return false;
+  }
+
+  try {
+    const me = await api('/api/auth/me');
+
+    if (!me || me.role !== 'admin') {
+      alert('Acceso solo para administradores.');
+      window.location.href = '/dashboard';
+      return false;
+    }
+
+    return true;
+  } catch (e) {
+    sessionStorage.removeItem('token');
+    window.location.href = '/login';
+    return false;
+  }
+}
+
+(async function init() {
+  const ok = await requireAdminPage();
+  if (!ok) return;
+
   await loadDoors();
   await loadUsers();
+  await loadAccessMatrix();
+  await loadDevices();
 })();
 </script>
 </body>

@@ -11,7 +11,7 @@ def main():
     password = os.getenv("ADMIN_PASSWORD", "Admin1234!")
     role = os.getenv("ADMIN_ROLE", "admin")
     is_active = True
-
+    
     db: Session = SessionLocal()
     try:
         existing = db.query(models.StaffUser).filter(models.StaffUser.email == email).first()
