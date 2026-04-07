@@ -21,6 +21,7 @@
     <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#users">Usuarios NFC</button></li>
     <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#access">Permisos</button></li>
     <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#devices">Dispositivos ESP32</button></li>
+    <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#enroll">Enrolamiento</button></li>
   </ul>
 
   <div class="tab-content pt-3">
@@ -231,11 +232,131 @@
       </div>
     </div>
 
+    <!-- ENROLAMIENTO -->
+    <div class="tab-pane fade" id="enroll">
+      <div class="row g-3">
+
+        <div class="col-lg-4">
+          <div class="card">
+            <div class="card-body">
+              <h6>Crear estación de enrolamiento</h6>
+
+              <div class="mb-2">
+                <label class="form-label">Station name</label>
+                <input id="st_name" class="form-control" placeholder="main">
+              </div>
+
+              <div class="mb-2">
+                <label class="form-label">Clave estación</label>
+                <input id="st_key" class="form-control" placeholder="clave segura estación">
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label">Descripción</label>
+                <input id="st_desc" class="form-control" placeholder="Estación principal de enrolamiento">
+              </div>
+
+              <button class="btn btn-primary w-100" onclick="createStationKey()">Guardar estación</button>
+              <div id="station_msg" class="small mt-2"></div>
+            </div>
+          </div>
+
+          <div class="card mt-3">
+            <div class="card-body">
+              <h6>Iniciar sesión de enrolamiento</h6>
+
+              <div class="mb-2">
+                <label class="form-label">Estación</label>
+                <input id="en_station_name" class="form-control" placeholder="main">
+              </div>
+
+              <div class="mb-2">
+                <label class="form-label">Tipo de tag</label>
+                <select id="en_tag_type" class="form-select">
+                  <option value="tag">tag</option>
+                  <option value="sticker">sticker</option>
+                  <option value="card">card</option>
+                </select>
+              </div>
+
+              <button class="btn btn-success w-100" onclick="startEnrollment()">Iniciar enrolamiento</button>
+              <div id="enroll_msg" class="small mt-2"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-lg-8">
+          <div class="card">
+            <div class="card-body">
+              <div class="d-flex justify-content-between align-items-center mb-2">
+                <h6 class="m-0">Estado de sesión</h6>
+                <div class="d-flex gap-2">
+                  <button class="btn btn-secondary btn-sm" onclick="refreshEnrollment()">Actualizar</button>
+                  <button class="btn btn-outline-primary btn-sm" onclick="consumeEnrollment()">Consumir</button>
+                </div>
+              </div>
+
+              <div class="row g-3">
+                <div class="col-md-4">
+                  <label class="form-label">Session ID</label>
+                  <input id="en_session_id" class="form-control" readonly>
+                </div>
+                <div class="col-md-4">
+                  <label class="form-label">Estado</label>
+                  <input id="en_status" class="form-control" readonly>
+                </div>
+                <div class="col-md-4">
+                  <label class="form-label">UID leído</label>
+                  <input id="en_uid" class="form-control" readonly>
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label">Creado</label>
+                  <input id="en_created" class="form-control" readonly>
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label">Leído</label>
+                  <input id="en_read_at" class="form-control" readonly>
+                </div>
+              </div>
+
+              <div id="enroll_status_msg" class="small mt-3"></div>
+
+              <hr>
+
+              <h6>Asignar UID leído a usuario NFC</h6>
+              <div class="row g-2">
+                <div class="col-md-6">
+                  <label class="form-label">Usuario NFC</label>
+                  <select id="cred_user_id" class="form-select"></select>
+                </div>
+                <div class="col-md-3">
+                  <label class="form-label">Tipo</label>
+                  <select id="cred_tag_type" class="form-select">
+                    <option value="tag">tag</option>
+                    <option value="sticker">sticker</option>
+                    <option value="card">card</option>
+                  </select>
+                </div>
+                <div class="col-md-3 d-flex align-items-end">
+                  <button class="btn btn-primary w-100" onclick="assignEnrollmentCredential()">Asignar credencial</button>
+                </div>
+              </div>
+
+              <div id="cred_msg" class="small mt-2"></div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
   </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
+let currentEnrollmentSessionId = null;
+
 async function api(path, opts = {}) {
   const token = sessionStorage.getItem('token');
   if (!token) { window.location.href = '/login'; return; }
@@ -256,7 +377,15 @@ async function api(path, opts = {}) {
 
   if (!r.ok) {
     let detail = '';
-    try { detail = (await r.json()).detail || r.statusText; } catch { detail = r.statusText; }
+    try {
+      const body = await r.json();
+      detail = body.detail || r.statusText;
+    } catch {
+      detail = r.statusText;
+    }
+    if (Array.isArray(detail)) {
+      detail = detail.map(x => x.msg || JSON.stringify(x)).join(' | ');
+    }
     throw new Error(detail);
   }
 
@@ -323,7 +452,10 @@ async function createDoor() {
         door_id: document.getElementById('door_id').value.trim(),
         name: document.getElementById('door_name').value.trim(),
         location: document.getElementById('door_loc').value.trim(),
-        is_enabled: document.getElementById('door_enabled').checked
+        is_enabled: document.getElementById('door_enabled').checked,
+        site: "main",
+        x: 0.5,
+        y: 0.5
       })
     });
     document.getElementById('door_id').value = '';
@@ -375,7 +507,14 @@ async function loadUsers() {
   }
 
   const sel = document.getElementById('a_uid');
-  sel.innerHTML = data.map(x => `<option value="${x.uid_hex}">${x.uid_hex} - ${x.full_name}</option>`).join('');
+  if (sel) {
+    sel.innerHTML = data.map(x => `<option value="${x.uid_hex}">${x.uid_hex} - ${x.full_name}</option>`).join('');
+  }
+
+  const credSel = document.getElementById('cred_user_id');
+  if (credSel) {
+    credSel.innerHTML = data.map(x => `<option value="${x.id}">${x.full_name} (${x.employee_number || 'sin empleado'})</option>`).join('');
+  }
 }
 
 function editUser(uid_hex, full_name, employee_number, is_active) {
@@ -598,6 +737,163 @@ async function toggleDevice(door_id) {
   }
 }
 
+/* ========================= ENROLAMIENTO ========================= */
+async function createStationKey() {
+  const msg = document.getElementById('station_msg');
+  msg.className = 'small mt-2';
+  msg.innerText = '';
+
+  try {
+    const station_name = document.getElementById('st_name').value.trim();
+    const raw_key = document.getElementById('st_key').value.trim();
+    const description = document.getElementById('st_desc').value.trim();
+
+    if (!station_name || !raw_key) {
+      msg.className = 'small mt-2 text-danger';
+      msg.innerText = 'Station name y clave son obligatorios.';
+      return;
+    }
+
+    await api('/api/enrollment-station-keys', {
+      method: 'POST',
+      body: JSON.stringify({ station_name, raw_key, description })
+    });
+
+    msg.className = 'small mt-2 text-success';
+    msg.innerText = '✅ Estación guardada';
+  } catch (e) {
+    msg.className = 'small mt-2 text-danger';
+    msg.innerText = e.message;
+  }
+}
+
+async function startEnrollment() {
+  const msg = document.getElementById('enroll_msg');
+  msg.className = 'small mt-2';
+  msg.innerText = '';
+
+  try {
+    const station_name = document.getElementById('en_station_name').value.trim() || 'main';
+    const tag_type = document.getElementById('en_tag_type').value;
+
+    const data = await api('/api/enrollment/start', {
+      method: 'POST',
+      body: JSON.stringify({ station_name, tag_type })
+    });
+
+    currentEnrollmentSessionId = data.id;
+    fillEnrollmentSession(data);
+
+    msg.className = 'small mt-2 text-success';
+    msg.innerText = '✅ Sesión iniciada. Esperando lectura del tag...';
+  } catch (e) {
+    msg.className = 'small mt-2 text-danger';
+    msg.innerText = e.message;
+  }
+}
+
+async function refreshEnrollment() {
+  const msg = document.getElementById('enroll_status_msg');
+  msg.className = 'small mt-2';
+  msg.innerText = '';
+
+  try {
+    const sessionId = currentEnrollmentSessionId || document.getElementById('en_session_id').value;
+    if (!sessionId) {
+      msg.className = 'small mt-2 text-danger';
+      msg.innerText = 'No hay sesión activa.';
+      return;
+    }
+
+    const data = await api('/api/enrollment/' + encodeURIComponent(sessionId));
+    currentEnrollmentSessionId = data.id;
+    fillEnrollmentSession(data);
+
+    if (data.status === 'read') {
+      msg.className = 'small mt-2 text-success';
+      msg.innerText = '✅ Tag leído correctamente.';
+    } else {
+      msg.className = 'small mt-2 text-muted';
+      msg.innerText = 'Estado actualizado.';
+    }
+  } catch (e) {
+    msg.className = 'small mt-2 text-danger';
+    msg.innerText = e.message;
+  }
+}
+
+async function consumeEnrollment() {
+  const msg = document.getElementById('enroll_status_msg');
+  msg.className = 'small mt-2';
+  msg.innerText = '';
+
+  try {
+    const sessionId = currentEnrollmentSessionId || document.getElementById('en_session_id').value;
+    if (!sessionId) {
+      msg.className = 'small mt-2 text-danger';
+      msg.innerText = 'No hay sesión activa.';
+      return;
+    }
+
+    const data = await api('/api/enrollment/' + encodeURIComponent(sessionId) + '/consume', {
+      method: 'POST'
+    });
+
+    fillEnrollmentSession(data);
+    msg.className = 'small mt-2 text-success';
+    msg.innerText = '✅ Sesión consumida.';
+  } catch (e) {
+    msg.className = 'small mt-2 text-danger';
+    msg.innerText = e.message;
+  }
+}
+
+function fillEnrollmentSession(data) {
+  document.getElementById('en_session_id').value = data.id || '';
+  document.getElementById('en_status').value = data.status || '';
+  document.getElementById('en_uid').value = data.uid_hex || '';
+  document.getElementById('en_created').value = fmtTs(data.created_at);
+  document.getElementById('en_read_at').value = fmtTs(data.read_at);
+
+  if (data.tag_type) {
+    document.getElementById('cred_tag_type').value = data.tag_type;
+  }
+}
+
+async function assignEnrollmentCredential() {
+  const msg = document.getElementById('cred_msg');
+  msg.className = 'small mt-2';
+  msg.innerText = '';
+
+  try {
+    const nfc_user_id = parseInt(document.getElementById('cred_user_id').value, 10);
+    const uid_hex = document.getElementById('en_uid').value.trim();
+    const tag_type = document.getElementById('cred_tag_type').value;
+
+    if (!nfc_user_id || !uid_hex) {
+      msg.className = 'small mt-2 text-danger';
+      msg.innerText = 'Se requiere usuario NFC y UID leído.';
+      return;
+    }
+
+    await api('/api/nfc-credentials', {
+      method: 'POST',
+      body: JSON.stringify({
+        nfc_user_id,
+        uid_hex,
+        tag_type,
+        is_active: true
+      })
+    });
+
+    msg.className = 'small mt-2 text-success';
+    msg.innerText = '✅ Credencial asignada correctamente.';
+  } catch (e) {
+    msg.className = 'small mt-2 text-danger';
+    msg.innerText = e.message;
+  }
+}
+
 async function requireAdminPage() {
   const token = sessionStorage.getItem('token');
   if (!token) {
@@ -630,6 +926,9 @@ async function requireAdminPage() {
   await loadUsers();
   await loadAccessMatrix();
   await loadDevices();
+
+  document.getElementById('st_name').value = 'main';
+  document.getElementById('en_station_name').value = 'main';
 })();
 </script>
 </body>
