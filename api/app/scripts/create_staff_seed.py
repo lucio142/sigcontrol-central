@@ -40,7 +40,6 @@ def create_user_if_missing(
     db.refresh(user)
 
     print(f"[OK] Creado: {user.email} (role={user.role})")
-
     return user
 
 
@@ -52,22 +51,22 @@ def main():
     try:
         users = [
             {
-                "email": env("ADMIN_EMAIL", "admin@sigcontrol.local"),
+                "email": env("ADMIN_EMAIL", "admin@sigcontrol.com"),
                 "password": env("ADMIN_PASSWORD", "CAMBIAR_ADMIN_PASSWORD"),
                 "role": env("ADMIN_ROLE", "admin"),
             },
             {
-                "email": env("SEGURIDAD_EMAIL", "seguridad@sigcontrol.local"),
+                "email": env("SEGURIDAD_EMAIL", "seguridad@sigcontrol.com"),
                 "password": env("SEGURIDAD_PASSWORD", "CAMBIAR_SEGURIDAD_PASSWORD"),
                 "role": "seguridad",
             },
             {
-                "email": env("SISTEMAS_EMAIL", "sistemas@sigcontrol.local"),
+                "email": env("SISTEMAS_EMAIL", "sistemas@sigcontrol.com"),
                 "password": env("SISTEMAS_PASSWORD", "CAMBIAR_SISTEMAS_PASSWORD"),
                 "role": "sistemas",
             },
             {
-                "email": env("HSC_EMAIL", "hsc@sigcontrol.local"),
+                "email": env("HSC_EMAIL", "hsc@sigcontrol.com"),
                 "password": env("HSC_PASSWORD", "CAMBIAR_HSC_PASSWORD"),
                 "role": "hsc",
             },

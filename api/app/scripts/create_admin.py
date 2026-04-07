@@ -7,11 +7,11 @@ from app.security import hash_password
 
 
 def main():
-    email = os.getenv("ADMIN_EMAIL", "admin@local.com").strip().lower()
+    email = os.getenv("ADMIN_EMAIL", "admin@sigcontrol.com").strip().lower()
     password = os.getenv("ADMIN_PASSWORD", "Admin1234!")
     role = os.getenv("ADMIN_ROLE", "admin")
     is_active = True
-    
+
     db: Session = SessionLocal()
     try:
         existing = db.query(models.StaffUser).filter(models.StaffUser.email == email).first()
