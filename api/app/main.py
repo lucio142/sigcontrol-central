@@ -400,6 +400,14 @@ def enrollment_station_key_create(
     return obj
 
 
+@app.get("/api/enrollment-station-keys", response_model=list[schemas.EnrollmentStationKeyOut])
+def enrollment_station_keys_list(
+    db: Session = Depends(get_db),
+    _u: models.StaffUser = Depends(require_roles("admin", "sistemas")),
+):
+    return crud.list_enrollment_station_keys(db)
+
+
 # ---------- Enrollment ----------
 @app.post("/api/enrollment/start", response_model=schemas.EnrollmentSessionOut)
 def enrollment_start(

@@ -602,6 +602,12 @@ def create_enrollment_station_key(
     db.refresh(obj)
     return obj
 
+def list_enrollment_station_keys(db: Session) -> list[models.EnrollmentStationKey]:
+    return (
+        db.query(models.EnrollmentStationKey)
+        .order_by(models.EnrollmentStationKey.station_name.asc())
+        .all()
+    )
 
 def get_enrollment_station_key(
     db: Session,
