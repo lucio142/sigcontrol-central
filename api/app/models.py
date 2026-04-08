@@ -36,11 +36,17 @@ class NfcUser(Base):
     __tablename__ = "nfc_users"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    uid_hex: Mapped[str] = mapped_column(String(32), unique=True, index=True)
+
+    # LEGACY: antes el usuario se identificaba por UID directo.
+    # Ahora el UID puede vivir en nfc_credentials.
+    uid_hex: Mapped[str | None] = mapped_column(String(32), unique=True, index=True, nullable=True)
+
     full_name: Mapped[str] = mapped_column(String(120))
     employee_number: Mapped[str] = mapped_column(String(40), default="")
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+    credentials = relationship("NfcCredential", back_populates="nfc_user", cascade="all, delete-orphan")
 
 
 class DoorAccess(Base):
@@ -81,7 +87,7 @@ class DeviceKey(Base):
     key_hash: Mapped[str] = mapped_column(String(255))
     description: Mapped[str] = mapped_column(String(120), default="")
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
-    last_seen: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=True)
+    last_seen: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     door = relationship("Door")
@@ -100,7 +106,7 @@ class NfcCredential(Base):
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
-    nfc_user = relationship("NfcUser")
+    nfc_user = relationship("NfcUser", back_populates="credentials")
 
 
 class EnrollmentStationKey(Base):

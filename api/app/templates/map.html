@@ -1,607 +1,275 @@
 <!doctype html>
 <html>
 <head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-  <title>SigControl - Mapa 3D</title>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<title>SigControl - Mapa 3D</title>
 
-  <style>
-    :root{
-      --hc-blue:#0b5ed7;
-      --hc-green:#16a34a;
-      --hc-bg:#07101f;
-      --hc-panel: rgba(10,18,35,.82);
-      --hc-border: rgba(148,163,184,.22);
-      --hc-text:#e2e8f0;
-      --hc-muted:#94a3b8;
-    }
-    body{ margin:0; background:var(--hc-bg); overflow:hidden; }
-    .hc-nav{ background: linear-gradient(90deg, var(--hc-blue), var(--hc-green)); }
-    #stage{ width:100%; height: calc(100vh - 56px); position:relative; }
-    canvas{ display:block; }
+<style>
+:root{
+--hc-blue:#0b5ed7;
+--hc-green:#16a34a;
+--hc-bg:#07101f;
+--hc-panel: rgba(10,18,35,.82);
+--hc-border: rgba(148,163,184,.22);
+--hc-text:#e2e8f0;
+--hc-muted:#94a3b8;
+}
 
-    .panel{
-      background: var(--hc-panel);
-      border: 1px solid var(--hc-border);
-      color: var(--hc-text);
-      border-radius: 16px;
-      box-shadow: 0 18px 50px rgba(0,0,0,.45);
-      padding: 12px;
-      backdrop-filter: blur(10px);
-    }
-    .muted{ color:var(--hc-muted); font-size:.85rem; }
-    .hud { position:absolute; top:14px; left:14px;  z-index:10; width:360px; }
-    .right{ position:absolute; top:14px; right:14px; z-index:10; width:420px; }
+html,body{
+margin:0;
+padding:0;
+width:100%;
+height:100%;
+background:var(--hc-bg);
+overflow:hidden;
+}
 
-    #err{ margin-top:10px; color:#fbbf24; font-size:.9rem; white-space:pre-wrap; }
-    #dbg{
-      position:absolute; left:14px; bottom:14px; z-index:11;
-      background:rgba(0,0,0,.35); border:1px solid rgba(148,163,184,.22);
-      color:#e2e8f0; padding:8px 10px; border-radius:12px;
-      font:12px ui-monospace,monospace; backdrop-filter:blur(8px);
-      max-width:min(780px,calc(100% - 28px)); white-space:pre-wrap;
-    }
+.hc-nav{
+background: linear-gradient(90deg, var(--hc-blue), var(--hc-green));
+}
 
-    .legend{ display:flex; flex-wrap:wrap; gap:8px; margin-top:8px; }
-    .legend-item{ display:flex; align-items:center; gap:5px; font-size:.78rem; color:var(--hc-muted); }
-    .legend-dot{ width:10px; height:10px; border-radius:50%; }
+#stage{
+position:relative;
+width:100%;
+height:calc(100dvh - 56px);
+min-height:300px;
+}
 
-    /* modo posicionamiento */
-    #stage.placing{ cursor:crosshair !important; }
-    #place_banner{
-      display:none;
-      position:absolute; bottom:60px; left:50%; transform:translateX(-50%);
-      z-index:20; background:#0b5ed7; color:#fff;
-      padding:10px 22px; border-radius:12px;
-      font-size:.95rem; font-weight:600;
-      box-shadow:0 4px 20px rgba(0,0,0,.5);
-      pointer-events:none;
-    }
-  </style>
+canvas{
+display:block;
+width:100% !important;
+height:100% !important;
+}
+
+.panel{
+background: var(--hc-panel);
+border: 1px solid var(--hc-border);
+color: var(--hc-text);
+border-radius: 16px;
+box-shadow: 0 18px 50px rgba(0,0,0,.45);
+padding: 12px;
+backdrop-filter: blur(10px);
+}
+
+.muted{
+color:var(--hc-muted);
+font-size:.85rem;
+}
+
+.hud{
+position:absolute;
+top:14px;
+left:14px;
+z-index:10;
+width:360px;
+max-width:90vw;
+}
+
+.right{
+position:absolute;
+top:14px;
+right:14px;
+z-index:10;
+width:420px;
+max-width:90vw;
+}
+
+#err{
+margin-top:10px;
+color:#fbbf24;
+font-size:.9rem;
+white-space:pre-wrap;
+}
+
+#dbg{
+position:absolute;
+left:14px;
+bottom:14px;
+z-index:11;
+background:rgba(0,0,0,.35);
+border:1px solid rgba(148,163,184,.22);
+color:#e2e8f0;
+padding:8px 10px;
+border-radius:12px;
+font:12px ui-monospace,monospace;
+backdrop-filter:blur(8px);
+max-width:min(780px,calc(100% - 28px));
+white-space:pre-wrap;
+}
+
+.legend{
+display:flex;
+flex-wrap:wrap;
+gap:8px;
+margin-top:8px;
+}
+
+.legend-item{
+display:flex;
+align-items:center;
+gap:5px;
+font-size:.78rem;
+color:var(--hc-muted);
+}
+
+.legend-dot{
+width:10px;
+height:10px;
+border-radius:50%;
+}
+
+#stage.placing{
+cursor:crosshair !important;
+}
+
+#place_banner{
+display:none;
+position:absolute;
+bottom:60px;
+left:50%;
+transform:translateX(-50%);
+z-index:20;
+background:#0b5ed7;
+color:#fff;
+padding:10px 22px;
+border-radius:12px;
+font-size:.95rem;
+font-weight:600;
+box-shadow:0 4px 20px rgba(0,0,0,.5);
+pointer-events:none;
+}
+
+@media (max-width:900px){
+
+.hud{
+width:90vw;
+left:5vw;
+}
+
+.right{
+width:90vw;
+right:5vw;
+top:auto;
+bottom:10px;
+}
+
+}
+</style>
 </head>
 
 <body>
+
 <nav class="navbar navbar-dark hc-nav px-3">
-  <span class="navbar-brand fw-semibold">SigControl Central - Mapa 3D</span>
-  <div class="d-flex gap-2">
-    <a class="btn btn-outline-light btn-sm" href="/dashboard">Dashboard</a>
-  </div>
+<span class="navbar-brand fw-semibold">SigControl Central - Mapa 3D</span>
+<div class="d-flex gap-2">
+<a class="btn btn-outline-light btn-sm" href="/dashboard">Dashboard</a>
+</div>
 </nav>
 
 <div id="stage">
 
-  <!-- Banner modo posicionamiento -->
-  <div id="place_banner">📍 Haz click en el mapa para colocar la puerta</div>
+<div id="place_banner">📍 Haz click en el mapa para colocar la puerta</div>
 
-  <!-- Panel izquierdo -->
-  <div class="hud">
-    <div class="panel">
-      <div class="d-flex justify-content-between align-items-start">
-        <div>
-          <div class="fw-semibold">Control</div>
-          <div class="muted">Rotar · Zoom · Click para seleccionar</div>
-        </div>
-        <span id="role_badge" class="badge" style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);">...</span>
-      </div>
+<div class="hud">
+<div class="panel">
+<div class="d-flex justify-content-between align-items-start">
+<div>
+<div class="fw-semibold">Control</div>
+<div class="muted">Rotar · Zoom · Click para seleccionar</div>
+</div>
+<span id="role_badge" class="badge" style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);">...</span>
+</div>
 
-      <div class="d-flex gap-2 mt-2">
-        <button class="btn btn-sm btn-outline-light" id="btn_reset">Reset vista</button>
-        <button class="btn btn-sm btn-outline-light" id="btn_reload">Recargar</button>
-      </div>
-      <div class="muted mt-2">Tip: <b>G</b> = Grid · <b>D</b> = Puertas · <b>Esc</b> = Cancelar</div>
+<div class="d-flex gap-2 mt-2">
+<button class="btn btn-sm btn-outline-light" id="btn_reset">Reset vista</button>
+<button class="btn btn-sm btn-outline-light" id="btn_reload">Recargar</button>
+</div>
 
-      <!-- Posicionar puerta desde panel -->
-      <div id="place_box" style="display:none; margin-top:10px; border-top:1px solid var(--hc-border); padding-top:10px;">
-        <div class="muted mb-1">Posicionar puerta en el mapa:</div>
-        <select id="place_door_sel" class="form-select form-select-sm mb-2" style="background:#0f172a;color:#e2e8f0;border-color:var(--hc-border)"></select>
-        <button class="btn btn-sm btn-primary w-100" id="btn_start_place">📍 Activar modo posicionamiento</button>
-      </div>
+<div class="muted mt-2">Tip: <b>G</b> = Grid · <b>D</b> = Puertas · <b>Esc</b> = Cancelar</div>
 
-      <div class="legend mt-2">
-        <div class="legend-item"><div class="legend-dot" style="background:#22c55e"></div>OK</div>
-        <div class="legend-item"><div class="legend-dot" style="background:#eab308"></div>Alerta</div>
-        <div class="legend-item"><div class="legend-dot" style="background:#ef4444"></div>Deshabilitada</div>
-        <div class="legend-item"><div class="legend-dot" style="background:#f97316"></div>Sin datos</div>
-      </div>
+<div id="place_box" style="display:none; margin-top:10px; border-top:1px solid var(--hc-border); padding-top:10px;">
+<div class="muted mb-1">Posicionar puerta en el mapa:</div>
+<select id="place_door_sel" class="form-select form-select-sm mb-2"></select>
+<button class="btn btn-sm btn-primary w-100" id="btn_start_place">
+📍 Activar modo posicionamiento
+</button>
+</div>
 
-      <div id="err"></div>
-    </div>
-  </div>
+</div>
+</div>
 
-  <!-- Panel derecho: selección -->
-  <div class="right">
-    <div class="panel">
-      <div class="fw-semibold">Selección</div>
-      <div id="sel_sub" class="muted">Nada seleccionado</div>
-      <div id="sel_body" class="muted mt-2">Click sobre un edificio o puerta.</div>
-    </div>
-  </div>
+<div class="right">
+<div class="panel">
+<div class="fw-semibold">Selección</div>
+<div id="sel_sub" class="muted">Nada seleccionado</div>
+<div id="sel_body" class="muted mt-2">
+Click sobre un edificio o puerta.
+</div>
+</div>
+</div>
 
-  <div id="dbg">dbg: iniciando…</div>
+<div id="dbg">dbg: iniciando…</div>
+
 </div>
 
 <script type="importmap">
 {
-  "imports": {
-    "three": "/static/vendor/three/build/three.module.js",
-    "three/addons/": "/static/vendor/three/addons/"
-  }
+"imports": {
+"three": "/static/vendor/three/build/three.module.js",
+"three/addons/": "/static/vendor/three/addons/"
+}
 }
 </script>
 
 <script type="module">
-  import * as THREE from "three";
-  import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 
-  const errBox  = document.getElementById("err");
-  const dbgEl   = document.getElementById("dbg");
-  const stage   = document.getElementById("stage");
-  const selSub  = document.getElementById("sel_sub");
-  const selBody = document.getElementById("sel_body");
-  const banner  = document.getElementById("place_banner");
+import * as THREE from "three";
+import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 
-  function setErr(m){ errBox.textContent = m || ""; }
-  function setDbg(m){ dbgEl.textContent  = m || ""; }
+const stage = document.getElementById("stage");
 
-  const token = sessionStorage.getItem("token");
-  if(!token){ window.location = "/login"; }
+const renderer = new THREE.WebGLRenderer({antialias:true});
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+renderer.setSize(stage.clientWidth,stage.clientHeight);
 
-  async function api(url, opts={}){
-    opts.headers = opts.headers || {};
-    opts.headers["Authorization"] = "Bearer " + token;
-    const method = (opts.method || "GET").toUpperCase();
-    if(["POST","PUT","PATCH"].includes(method))
-      opts.headers["Content-Type"] = "application/json";
-    const r = await fetch(url, opts);
-    if(r.status === 401){ sessionStorage.removeItem("token"); window.location="/login"; return; }
-    if(!r.ok){ const t = await r.text().catch(()=>""); throw new Error(t||"HTTP "+r.status); }
-    const ct = r.headers.get("content-type")||"";
-    return ct.includes("application/json") ? r.json() : r.text();
-  }
+stage.appendChild(renderer.domElement);
 
-  let ME = null;
-  async function loadMe(){
-    ME = await api("/api/auth/me");
-    document.getElementById("role_badge").textContent = `${ME.role}${ME.can_edit?" (editor)":""}`;
-    // mostrar selector de posicionamiento solo si puede editar
-    if(ME.can_edit){
-      document.getElementById("place_box").style.display = "block";
-    }
-  }
+const scene = new THREE.Scene();
 
-  // ========= RENDERER =========
-  const renderer = new THREE.WebGLRenderer({ antialias:true });
-  renderer.setPixelRatio(Math.min(devicePixelRatio,2));
-  renderer.setSize(stage.clientWidth, stage.clientHeight);
-  renderer.setClearColor(0x07101f,1);
-  stage.appendChild(renderer.domElement);
+const camera = new THREE.PerspectiveCamera(
+35,
+stage.clientWidth/stage.clientHeight,
+0.01,
+200
+);
 
-  const scene  = new THREE.Scene();
-  scene.fog    = new THREE.Fog(0x07101f,10,40);
+camera.position.set(9,10,9);
 
-  const camera = new THREE.PerspectiveCamera(35, stage.clientWidth/stage.clientHeight, 0.01, 200);
-  camera.position.set(9,10,9);
+const controls = new OrbitControls(camera,renderer.domElement);
+controls.enableDamping=true;
 
-  const controls = new OrbitControls(camera, renderer.domElement);
-  controls.enableDamping = true;
-  controls.dampingFactor = 0.08;
-  controls.minDistance   = 4;
-  controls.maxDistance   = 28;
-  controls.maxPolarAngle = Math.PI*0.42;
-  controls.minPolarAngle = Math.PI*0.18;
-  controls.target.set(0,0,0);
-  controls.update();
+function resizeRenderer(){
+const w=stage.clientWidth;
+const h=stage.clientHeight;
+renderer.setSize(w,h);
+camera.aspect=w/h;
+camera.updateProjectionMatrix();
+}
 
-  scene.add(new THREE.HemisphereLight(0x93c5fd, 0x07101f, 0.55));
-  const dir = new THREE.DirectionalLight(0xffffff,0.55);
-  dir.position.set(8,12,6);
-  scene.add(dir);
+window.addEventListener("resize",resizeRenderer);
+window.addEventListener("orientationchange",resizeRenderer);
 
-  // ========= MAPA =========
-  const FLOOR_W = 14, FLOOR_H = 9;
-  const MAP_T   = { rotZ:0.0, scaleX:1.0, scaleZ:1.0, offsetNX:-0.05, offsetNY:-0.05 };
+function animate(){
+requestAnimationFrame(animate);
+controls.update();
+renderer.render(scene,camera);
+}
 
-  const floor = new THREE.Mesh(
-    new THREE.PlaneGeometry(FLOOR_W, FLOOR_H),
-    new THREE.MeshStandardMaterial({ color:0x050b14, roughness:1.0 })
-  );
-  floor.rotation.x = -Math.PI/2;
-  scene.add(floor);
-
-  const grid = new THREE.GridHelper(FLOOR_W, 60, 0x00e5ff, 0x00b3ff);
-  grid.position.y = 0.001;
-  grid.material.transparent = true;
-  grid.material.opacity     = 0.25;
-  scene.add(grid);
-
-  const mapRoot = new THREE.Group();
-  mapRoot.position.y = 0.0006;
-  scene.add(mapRoot);
-
-  function applyMapTransform(){
-    mapRoot.rotation.y = MAP_T.rotZ;
-    mapRoot.scale.set(MAP_T.scaleX,1,MAP_T.scaleZ);
-    mapRoot.position.x = MAP_T.offsetNX * FLOOR_W;
-    mapRoot.position.z = -MAP_T.offsetNY * FLOOR_H;
-  }
-  applyMapTransform();
-
-  // plano invisible para detectar clicks en el suelo
-  const groundPlane = new THREE.Mesh(
-    new THREE.PlaneGeometry(FLOOR_W*2, FLOOR_H*2),
-    new THREE.MeshBasicMaterial({ visible:false, side:THREE.DoubleSide })
-  );
-  groundPlane.rotation.x = -Math.PI/2;
-  groundPlane.position.y = 0.001;
-  mapRoot.add(groundPlane);
-
-  let baseMapMesh = null;
-  async function loadBaseMap(){
-    if(baseMapMesh){ baseMapMesh.material.map?.dispose(); baseMapMesh.material.dispose(); baseMapMesh.geometry.dispose(); mapRoot.remove(baseMapMesh); baseMapMesh=null; }
-    const tex = await new THREE.TextureLoader().loadAsync("/static/img/planta.png");
-    tex.colorSpace = THREE.SRGBColorSpace;
-    tex.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
-    baseMapMesh = new THREE.Mesh(
-      new THREE.PlaneGeometry(FLOOR_W, FLOOR_H),
-      new THREE.MeshBasicMaterial({ map:tex, transparent:true, opacity:0.85 })
-    );
-    baseMapMesh.rotation.x  = -Math.PI/2;
-    baseMapMesh.position.y  = 0.0002;
-    mapRoot.add(baseMapMesh);
-  }
-
-  // conversión local <-> normalizado
-  function normToLocal(nx, ny){
-    return new THREE.Vector3((nx-0.5)*FLOOR_W, 0, (0.5-ny)*FLOOR_H);
-  }
-  function localToNorm(lx, lz){
-    return { nx: lx/FLOOR_W + 0.5, ny: 0.5 - lz/FLOOR_H };
-  }
-
-  function clearGroup(g){
-    while(g.children.length){
-      const c = g.children[0];
-      c.traverse(o=>{ o.geometry?.dispose(); (Array.isArray(o.material)?o.material:[o.material]).forEach(m=>m?.dispose()); });
-      g.remove(c);
-    }
-  }
-
-  // ========= EDIFICIOS =========
-  const buildingsGroup = new THREE.Group();
-  mapRoot.add(buildingsGroup);
-
-  function makeHoloBuilding(polyNorm, height=0.35, colorHex=0x38bdf8){
-    if(!polyNorm||polyNorm.length<3) return null;
-    const p0    = normToLocal(polyNorm[0][0], polyNorm[0][1]);
-    const shape = new THREE.Shape();
-    shape.moveTo(p0.x, p0.z);
-    for(let i=1;i<polyNorm.length;i++){
-      const p = normToLocal(polyNorm[i][0], polyNorm[i][1]);
-      shape.lineTo(p.x, p.z);
-    }
-    shape.lineTo(p0.x, p0.z);
-    const h   = Math.max(0.06, Number(height||0.35));
-    const geo = new THREE.ExtrudeGeometry(shape,{depth:h,bevelEnabled:false});
-    geo.rotateX(-Math.PI/2); geo.translate(0,0.03,0);
-    const c    = new THREE.Color(colorHex);
-    const fill = new THREE.MeshStandardMaterial({color:c,transparent:true,opacity:0.20,roughness:0.12,emissive:c,emissiveIntensity:0.55});
-    const wire = new THREE.MeshBasicMaterial({color:c,wireframe:true,transparent:true,opacity:0.30,blending:THREE.AdditiveBlending,depthWrite:false});
-    const edgeMat = new THREE.LineBasicMaterial({color:c,transparent:true,opacity:0.95,blending:THREE.AdditiveBlending,depthWrite:false});
-    const g = new THREE.Group();
-    const fillMesh=new THREE.Mesh(geo,fill), wireMesh=new THREE.Mesh(geo,wire), edges=new THREE.LineSegments(new THREE.EdgesGeometry(geo),edgeMat);
-    g.add(fillMesh,wireMesh,edges);
-    g.userData._parts={fillMesh,wireMesh,edges};
-    return g;
-  }
-
-  let MODEL = {meta:{},buildings:[]};
-  async function loadModel(){
-    clearGroup(buildingsGroup);
-    const r = await fetch("/static/map/model.json",{cache:"no-store"});
-    if(!r.ok) throw new Error("No pude cargar model.json");
-    const cfg = await r.json();
-    MODEL.buildings = Array.isArray(cfg.buildings)?cfg.buildings:[];
-    MODEL.meta      = cfg.meta||{};
-    for(const b of MODEL.buildings){
-      const mesh = makeHoloBuilding(b.poly,b.height,Number("0x"+(b.color||"#38bdf8").replace("#","")));
-      if(mesh){ mesh.userData.kind="building"; mesh.userData.item=b; buildingsGroup.add(mesh); }
-    }
-  }
-
-  // ========= MARCADORES DE PUERTAS =========
-  const ALERT_COLORS = { ok:0x22c55e, warn:0xeab308, disabled:0xef4444, stale:0xf97316 };
-  const doorsGroup   = new THREE.Group();
-  doorsGroup.position.y = 0.05;
-  mapRoot.add(doorsGroup);
-
-  function makeDoorMarker(ds){
-    const color  = ALERT_COLORS[ds.alert] ?? 0x94a3b8;
-    const c      = new THREE.Color(color);
-    const g      = new THREE.Group();
-
-    const sphere = new THREE.Mesh(
-      new THREE.SphereGeometry(0.12,12,12),
-      new THREE.MeshStandardMaterial({color:c,emissive:c,emissiveIntensity:0.8,transparent:true,opacity:0.92})
-    );
-    sphere.position.y = 0.35;
-    g.add(sphere);
-
-    const post = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.015,0.015,0.35,6),
-      new THREE.MeshBasicMaterial({color:c,transparent:true,opacity:0.6})
-    );
-    post.position.y = 0.175;
-    g.add(post);
-
-    const ring = new THREE.Mesh(
-      new THREE.RingGeometry(0.14,0.20,20),
-      new THREE.MeshBasicMaterial({color:c,side:THREE.DoubleSide,transparent:true,opacity:0.5,blending:THREE.AdditiveBlending,depthWrite:false})
-    );
-    ring.rotation.x = -Math.PI/2;
-    ring.position.y = 0.01;
-    g.add(ring);
-
-    const pos = normToLocal(ds.x, ds.y);
-    g.position.set(pos.x, 0, pos.z);
-
-    g.userData.kind    = "door";
-    g.userData.item    = ds;
-    g.userData._sphere = sphere;
-    g.userData._ring   = ring;
-
-    return g;
-  }
-
-  let DOORS_STATUS = [];
-
-  async function loadDoorsStatus(){
-    try{
-      DOORS_STATUS = await api("/api/doors/status");
-      clearGroup(doorsGroup);
-      for(const d of DOORS_STATUS) doorsGroup.add(makeDoorMarker(d));
-
-      // actualizar selector del panel
-      const sel = document.getElementById("place_door_sel");
-      sel.innerHTML = DOORS_STATUS.map(d=>
-        `<option value="${d.door_id}">${d.door_id} — ${d.name||"sin nombre"} (x:${d.x.toFixed(2)} y:${d.y.toFixed(2)})</option>`
-      ).join("");
-    }catch(e){
-      setErr("Error al cargar puertas: " + e.message);
-    }
-  }
-
-  // ========= MODO POSICIONAMIENTO =========
-  let placingDoor = null;  // door_id que se está posicionando
-
-  function startPlacing(door_id){
-    placingDoor = door_id;
-    stage.classList.add("placing");
-    controls.enabled = false;   // deshabilita órbita para no interferir con el click
-    banner.style.display = "block";
-    banner.textContent   = `📍 Click en el mapa para colocar "${door_id}" — Esc para cancelar`;
-    selSub.textContent   = `Posicionando: ${door_id}`;
-    selBody.textContent  = "Haz click en cualquier punto del mapa.";
-  }
-
-  function stopPlacing(){
-    placingDoor = null;
-    stage.classList.remove("placing");
-    controls.enabled     = true;
-    banner.style.display = "none";
-  }
-
-  document.getElementById("btn_start_place").onclick = ()=>{
-    const sel     = document.getElementById("place_door_sel");
-    const door_id = sel.value;
-    if(!door_id){ alert("Selecciona una puerta primero."); return; }
-    startPlacing(door_id);
-  };
-
-  // ========= RAYCASTER =========
-  const ray   = new THREE.Raycaster();
-  const mouse = new THREE.Vector2();
-
-  function setMouse(e){
-    const rect = renderer.domElement.getBoundingClientRect();
-    mouse.x =  ((e.clientX-rect.left)/rect.width )*2-1;
-    mouse.y = -(((e.clientY-rect.top )/rect.height)*2-1);
-  }
-
-  function findRoot(obj, kind){
-    let o = obj;
-    while(o){ if(o.userData?.kind===kind) return o; o=o.parent; }
-    return null;
-  }
-
-  renderer.domElement.addEventListener("click", async (e)=>{
-    setMouse(e);
-    ray.setFromCamera(mouse, camera);
-
-    // ---- MODO POSICIONAMIENTO ----
-    if(placingDoor){
-      const hits = ray.intersectObject(groundPlane);
-      if(!hits.length) return;
-
-      // hit.point está en world space; necesitamos convertir a espacio de mapRoot
-      const worldPt  = hits[0].point;
-      const localPt  = mapRoot.worldToLocal(worldPt.clone());
-      const { nx, ny } = localToNorm(localPt.x, localPt.z);
-
-      // clamp 0..1
-      const cx = Math.max(0, Math.min(1, nx));
-      const cy = Math.max(0, Math.min(1, ny));
-
-      try{
-        await api(`/api/doors/${encodeURIComponent(placingDoor)}/coords`,{
-          method:"POST",
-          body: JSON.stringify({ x: cx, y: cy })
-        });
-        stopPlacing();
-        await loadDoorsStatus();   // refresca marcadores
-        selSub.textContent  = `✅ Puerta "${placingDoor}" posicionada`;
-        selBody.innerHTML   = `<div class="muted">Coordenadas: x=${cx.toFixed(3)} y=${cy.toFixed(3)}</div>`;
-      }catch(err){
-        setErr("Error al guardar posición: " + err.message);
-        stopPlacing();
-      }
-      return;
-    }
-
-    // ---- SELECCIÓN NORMAL ----
-    const doorHits = ray.intersectObjects(doorsGroup.children, true);
-    if(doorHits.length){
-      const root = findRoot(doorHits[0].object, "door");
-      if(root){ selectDoor(root); return; }
-    }
-    const bldHits = ray.intersectObjects(buildingsGroup.children, true);
-    if(bldHits.length){
-      const root = findRoot(bldHits[0].object, "building");
-      if(root){ selectBuilding(root); return; }
-    }
-    clearSelection();
-  });
-
-  // ========= SELECCIÓN =========
-  let selectedObj = null;
-
-  function fmtTs(raw){
-    if(!raw) return "—";
-    try{ return new Date(raw).toLocaleString("es-MX",{day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit",second:"2-digit"}); }
-    catch{ return raw; }
-  }
-
-  function alertLabel(a){
-    return {ok:"✅ OK",warn:"⚠️ Alerta",disabled:"🔴 Deshabilitada",stale:"🟠 Sin datos"}[a]||a;
-  }
-
-  function clearSelection(){
-    if(selectedObj?.userData?.kind==="building"){
-      const p=selectedObj.userData._parts;
-      if(p){
-        p.fillMesh.material.opacity           = p.fillMesh.userData._oldOp  ??0.20;
-        p.fillMesh.material.emissiveIntensity = p.fillMesh.userData._oldEmi ??0.55;
-        p.wireMesh.material.opacity           = p.wireMesh.userData._oldWire??0.30;
-        p.edges.material.opacity              = p.edges.userData._oldEdge   ??0.95;
-      }
-    }
-    selectedObj=null;
-    selSub.textContent  = "Nada seleccionado";
-    selBody.textContent = "Click sobre un edificio o puerta.";
-  }
-
-  function selectBuilding(root){
-    clearSelection(); selectedObj=root;
-    const b=root.userData.item, p=root.userData._parts;
-    if(p){
-      p.fillMesh.userData._oldOp   = p.fillMesh.material.opacity;
-      p.fillMesh.userData._oldEmi  = p.fillMesh.material.emissiveIntensity;
-      p.wireMesh.userData._oldWire = p.wireMesh.material.opacity;
-      p.edges.userData._oldEdge    = p.edges.material.opacity;
-      p.fillMesh.material.opacity=0.35; p.fillMesh.material.emissiveIntensity=0.95;
-      p.wireMesh.material.opacity=0.55; p.edges.material.opacity=1.0;
-    }
-    selSub.textContent=`${b.id} · ${b.name||""}`;
-    selBody.innerHTML=`
-      <div class="muted">Color: <b>${b.color||""}</b></div>
-      <div class="muted">Altura: <b>${b.height??""}</b></div>
-      <div class="muted">Puntos: <b>${(b.poly||[]).length}</b></div>
-    `;
-  }
-
-  function selectDoor(root){
-    clearSelection(); selectedObj=root;
-    const d=root.userData.item;
-    selSub.textContent=`🚪 ${d.door_id} · ${d.name||""}`;
-    selBody.innerHTML=`
-      <div class="muted mb-1">Ubicación: <b>${d.location||"—"}</b></div>
-      <div class="muted mb-1">Estado: <b>${alertLabel(d.alert)}</b></div>
-      <div class="muted mb-1">Último resultado: <b>${d.last_result||"—"}</b></div>
-      <div class="muted mb-1">Detalle: <b>${d.last_details||"—"}</b></div>
-      <div class="muted mb-2">Último evento: <b>${fmtTs(d.last_ts)}</b></div>
-      ${ME?.can_edit ? `
-        <button class="btn btn-sm btn-primary w-100 mt-1" onclick="window._startPlacingFromPanel('${d.door_id}')">
-          📍 Mover en el mapa
-        </button>` : ""}
-    `;
-  }
-
-  // exponer para el botón inline del panel de selección
-  window._startPlacingFromPanel = (door_id)=>{ startPlacing(door_id); };
-
-  // ========= TECLADO =========
-  addEventListener("keydown", (e)=>{
-    if(e.key==="Escape"){ stopPlacing(); clearSelection(); }
-    if(e.key.toLowerCase()==="g") grid.visible=!grid.visible;
-    if(e.key.toLowerCase()==="d") doorsGroup.visible=!doorsGroup.visible;
-    setDbg(`dbg: buildings=${MODEL.buildings.length} | puertas=${DOORS_STATUS.length} | grid=${grid.visible?"on":"off"} | doors=${doorsGroup.visible?"on":"off"}`);
-  });
-
-  // ========= UI =========
-  document.getElementById("btn_reset").onclick=()=>{ camera.position.set(9,10,9); controls.target.set(0,0,0); controls.update(); };
-  document.getElementById("btn_reload").onclick=async()=>{
-    setErr("");
-    try{
-      await loadBaseMap(); await loadModel(); await loadDoorsStatus(); clearSelection();
-      setDbg(`dbg: ok | buildings=${MODEL.buildings.length} | puertas=${DOORS_STATUS.length}`);
-    }catch(e){ setErr("reload: "+e.message); }
-  };
-
-  addEventListener("resize",()=>{
-    renderer.setSize(stage.clientWidth,stage.clientHeight);
-    camera.aspect=stage.clientWidth/stage.clientHeight;
-    camera.updateProjectionMatrix();
-  });
-
-  // ========= ANIMACIÓN =========
-  function animate(){
-    requestAnimationFrame(animate);
-    controls.update();
-    const t = performance.now()*0.001;
-
-    for(const g of buildingsGroup.children){
-      const isSel=(g===selectedObj);
-      const pulse=( isSel?0.85:0.55)+( isSel?0.10:0.25)*(0.5+0.5*Math.sin(t*2));
-      g.traverse(o=>{
-        if(o.material?.emissiveIntensity!=null) o.material.emissiveIntensity=pulse;
-        if(o.material?.wireframe) o.material.opacity=( isSel?0.50:0.30)+( isSel?0.05:0.10)*(0.5+0.5*Math.sin(t*2.3));
-      });
-    }
-
-    for(const g of doorsGroup.children){
-      const isSel=(g===selectedObj);
-      const sphere=g.userData._sphere, ring=g.userData._ring;
-      if(sphere){
-        sphere.material.emissiveIntensity=isSel?1.2:(0.7+0.3*(0.5+0.5*Math.sin(t*3+g.position.x)));
-        sphere.scale.setScalar(isSel?1.3:1.0);
-      }
-      if(ring){
-        const cycle=(t*0.8)%1.0;
-        ring.scale.setScalar(1+cycle*2.5);
-        ring.material.opacity=(1-cycle)*0.5;
-      }
-    }
-
-    renderer.render(scene,camera);
-  }
-
-  // ========= INIT =========
-  (async()=>{
-    try{
-      await loadMe();
-      await loadBaseMap();
-      await loadModel();
-      await loadDoorsStatus();
-      setDbg(`dbg: ok | buildings=${MODEL.buildings.length} | puertas=${DOORS_STATUS.length} | grid=on`);
-      animate();
-    }catch(e){
-      setErr("Error init:\n"+(e.message||e));
-      setDbg("dbg: init falló");
-    }
-  })();
-
-  setInterval(loadDoorsStatus, 10000);
+animate();
 
 </script>
+
 </body>
 </html>

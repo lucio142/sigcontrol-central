@@ -67,8 +67,16 @@ class DoorCoordsIn(BaseModel):
 # ---------------------------
 # NFC Users
 # ---------------------------
-class NfcUserIn(BaseModel):
-    uid_hex: str = Field(min_length=4, max_length=32)
+class NfcUserCreate(BaseModel):
+    full_name: str = Field(min_length=2, max_length=120)
+    employee_number: str = ""
+    is_active: bool = True
+
+    # opcional solo por compatibilidad/legado
+    uid_hex: Optional[str] = Field(default=None, min_length=4, max_length=32)
+
+
+class NfcUserUpdate(BaseModel):
     full_name: str = Field(min_length=2, max_length=120)
     employee_number: str = ""
     is_active: bool = True
@@ -78,7 +86,7 @@ class NfcUserOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     id: int
-    uid_hex: str
+    uid_hex: Optional[str] = None
     full_name: str
     employee_number: str = ""
     is_active: bool

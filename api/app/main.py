@@ -11,7 +11,12 @@ from app.security import create_access_token
 from app.deps import get_current_user, require_roles, require_edit_access, require_device
 from app.config import get_edit_roles
 
-app = FastAPI(title="SigControl Central API")
+app = FastAPI(
+    title="SigControl Central API",
+    docs_url=None,
+    redoc_url=None,
+    openapi_url=None,
+)
 
 
 def require_enrollment_station(
@@ -25,6 +30,16 @@ def require_enrollment_station(
     ok = crud.verify_enrollment_station_key(db, station_name, x_station_key)
     if not ok:
         raise HTTPException(status_code=401, detail="Invalid station credentials")
+
+
+def nfc_user_to_out(db: Session, u: models.NfcUser) -> schemas.NfcUserOut:
+    return schemas.NfcUserOut(
+        id=u.id,
+        uid_hex=crud.get_display_uid_for_user(db, u),
+        full_name=u.full_name,
+        employee_number=u.employee_number,
+        is_active=u.is_active,
+    )
 
 
 @app.on_event("startup")
@@ -227,54 +242,52 @@ def nfc_users_list(
     db: Session = Depends(get_db),
     _u: models.StaffUser = Depends(require_roles("admin", "seguridad", "sistemas", "hsc")),
 ):
-    return crud.list_nfc_users(db)
+    users = crud.list_nfc_users(db)
+    return [nfc_user_to_out(db, u) for u in users]
 
 
 @app.post("/api/nfc-users", response_model=schemas.NfcUserOut)
 def nfc_users_create(
-    payload: schemas.NfcUserIn,
+    payload: schemas.NfcUserCreate,
     db: Session = Depends(get_db),
     _admin: models.StaffUser = Depends(require_roles("admin")),
 ):
-    if crud.get_nfc_user_by_uid(db, payload.uid_hex):
-        raise HTTPException(status_code=409, detail="uid already exists")
-    u = crud.create_nfc_user(db, payload.uid_hex, payload.full_name, payload.employee_number, payload.is_active)
-    return schemas.NfcUserOut(
-        id=u.id,
-        uid_hex=u.uid_hex,
-        full_name=u.full_name,
-        employee_number=u.employee_number,
-        is_active=u.is_active,
+    if payload.uid_hex:
+        if crud.get_nfc_user_by_uid(db, payload.uid_hex):
+            raise HTTPException(status_code=409, detail="uid already exists")
+
+    u = crud.create_nfc_user(
+        db,
+        full_name=payload.full_name,
+        employee_number=payload.employee_number,
+        is_active=payload.is_active,
+        uid_hex=payload.uid_hex,
     )
+    return nfc_user_to_out(db, u)
 
 
-@app.put("/api/nfc-users/{uid_hex}", response_model=schemas.NfcUserOut)
+@app.put("/api/nfc-users/{user_id}", response_model=schemas.NfcUserOut)
 def nfc_users_update(
-    uid_hex: str,
-    payload: schemas.NfcUserIn,
+    user_id: int,
+    payload: schemas.NfcUserUpdate,
     db: Session = Depends(get_db),
     _admin: models.StaffUser = Depends(require_roles("admin")),
 ):
-    u = crud.get_nfc_user_by_uid(db, uid_hex)
+    u = crud.get_nfc_user_by_id(db, user_id)
     if not u:
         raise HTTPException(status_code=404, detail="NFC user not found")
+
     u = crud.update_nfc_user(db, u, payload.full_name, payload.employee_number, payload.is_active)
-    return schemas.NfcUserOut(
-        id=u.id,
-        uid_hex=u.uid_hex,
-        full_name=u.full_name,
-        employee_number=u.employee_number,
-        is_active=u.is_active,
-    )
+    return nfc_user_to_out(db, u)
 
 
-@app.delete("/api/nfc-users/{uid_hex}")
+@app.delete("/api/nfc-users/{user_id}")
 def nfc_users_delete(
-    uid_hex: str,
+    user_id: int,
     db: Session = Depends(get_db),
     _admin: models.StaffUser = Depends(require_roles("admin")),
 ):
-    u = crud.get_nfc_user_by_uid(db, uid_hex)
+    u = crud.get_nfc_user_by_id(db, user_id)
     if not u:
         raise HTTPException(status_code=404, detail="NFC user not found")
     crud.delete_nfc_user(db, u)
@@ -516,9 +529,11 @@ def door_access_set(
     door = crud.get_door_by_code(db, payload.door_id)
     if not door:
         raise HTTPException(status_code=404, detail="Door not found")
+
     user = crud.get_nfc_user_by_uid(db, payload.uid_hex)
     if not user:
         raise HTTPException(status_code=404, detail="NFC user not found")
+
     crud.allow_nfc_for_door(db, door.id, user.id, payload.is_allowed)
     return {"ok": True, "is_allowed": bool(payload.is_allowed)}
 
@@ -532,9 +547,11 @@ def door_access_toggle(
     door = crud.get_door_by_code(db, payload.door_id)
     if not door:
         raise HTTPException(status_code=404, detail="Door not found")
+
     user = crud.get_nfc_user_by_uid(db, payload.uid_hex)
     if not user:
         raise HTTPException(status_code=404, detail="NFC user not found")
+
     current = crud.is_nfc_allowed_for_door(db, door.id, user.id)
     crud.allow_nfc_for_door(db, door.id, user.id, not current)
     return {"ok": True, "is_allowed": (not current)}

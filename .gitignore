@@ -8,13 +8,13 @@ __pycache__/
 venv/
 .venv/
 
-# Env variables
+# Env
 .env
 
 # Node
 node_modules/
 
-# VSCode
+# VS Code
 .vscode/
 
 # OS

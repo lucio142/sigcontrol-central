@@ -28,6 +28,26 @@ def normalize_uid(uid: str) -> str:
     return (uid or "").strip().upper().replace(" ", "")
 
 
+def get_display_uid_for_user(db: Session, user: models.NfcUser) -> str | None:
+    if user.uid_hex:
+        return normalize_uid(user.uid_hex)
+
+    cred = (
+        db.query(models.NfcCredential)
+        .filter(
+            models.NfcCredential.nfc_user_id == user.id,
+            models.NfcCredential.is_active == True,
+        )
+        .order_by(models.NfcCredential.id.asc())
+        .first()
+    )
+
+    if cred:
+        return cred.uid_hex
+
+    return None
+
+
 # =========================
 # STAFF USERS
 # =========================
@@ -165,13 +185,21 @@ def delete_door(db: Session, door: models.Door) -> None:
 # NFC USERS
 # =========================
 
+def get_nfc_user_by_id(db: Session, user_id: int) -> models.NfcUser | None:
+    return db.query(models.NfcUser).filter(models.NfcUser.id == user_id).first()
+
+
 def get_nfc_user_by_uid(db: Session, uid: str) -> models.NfcUser | None:
     uid = normalize_uid(uid)
+    if not uid:
+        return None
 
+    # 1) legado: uid directo en nfc_users
     user = db.query(models.NfcUser).filter(models.NfcUser.uid_hex == uid).first()
     if user:
         return user
 
+    # 2) nuevo modelo: uid vive en nfc_credentials
     cred = db.query(models.NfcCredential).filter(
         models.NfcCredential.uid_hex == uid,
         models.NfcCredential.is_active == True,
@@ -189,20 +217,22 @@ def list_nfc_users(db: Session) -> list[models.NfcUser]:
 
 def create_nfc_user(
     db: Session,
-    uid_hex: str,
     full_name: str,
     employee_number: str = "",
     is_active: bool = True,
+    uid_hex: str | None = None,
 ) -> models.NfcUser:
-    uid_hex = normalize_uid(uid_hex)
-    existing = get_nfc_user_by_uid(db, uid_hex)
-    if existing:
-        return existing
+    uid_norm = normalize_uid(uid_hex) if uid_hex else None
+
+    if uid_norm:
+        existing = get_nfc_user_by_uid(db, uid_norm)
+        if existing:
+            return existing
 
     u = models.NfcUser(
-        uid_hex=uid_hex,
+        uid_hex=uid_norm or None,
         full_name=(full_name or "").strip(),
-        employee_number=employee_number or "",
+        employee_number=(employee_number or "").strip(),
         is_active=bool(is_active),
     )
     db.add(u)
@@ -219,7 +249,7 @@ def update_nfc_user(
     is_active: bool,
 ) -> models.NfcUser:
     u.full_name = (full_name or "").strip()
-    u.employee_number = employee_number or ""
+    u.employee_number = (employee_number or "").strip()
     u.is_active = bool(is_active)
     db.commit()
     db.refresh(u)
@@ -326,7 +356,7 @@ def list_door_access(db: Session) -> list[tuple[str, str, str, bool]]:
     rows = (
         db.query(
             models.Door.door_id,
-            models.NfcUser.uid_hex,
+            models.NfcUser.id,
             models.NfcUser.full_name,
             models.DoorAccess.is_allowed,
         )
@@ -335,7 +365,14 @@ def list_door_access(db: Session) -> list[tuple[str, str, str, bool]]:
         .order_by(models.Door.door_id.asc(), models.NfcUser.full_name.asc())
         .all()
     )
-    return rows
+
+    out: list[tuple[str, str, str, bool]] = []
+    for door_code, user_id, full_name, is_allowed in rows:
+        user = get_nfc_user_by_id(db, user_id)
+        display_uid = get_display_uid_for_user(db, user) if user else None
+        out.append((door_code, display_uid or "", full_name, is_allowed))
+
+    return out
 
 
 # =========================

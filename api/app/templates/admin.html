@@ -79,10 +79,9 @@
           <div class="card">
             <div class="card-body">
               <h6 id="user_form_title">Crear usuario NFC</h6>
-              <div class="mb-2">
-                <label class="form-label">UID (hex)</label>
-                <input id="u_uid" class="form-control" placeholder="04A1B2C3D4">
-              </div>
+
+              <input type="hidden" id="u_id">
+
               <div class="mb-2">
                 <label class="form-label">Nombre completo</label>
                 <input id="u_name" class="form-control" placeholder="Juan Pérez">
@@ -112,7 +111,7 @@
           <div class="table-responsive">
             <table class="table table-striped align-middle">
               <thead>
-                <tr><th>ID</th><th>UID</th><th>Nombre</th><th>No. empleado</th><th>Activo</th><th></th></tr>
+                <tr><th>ID</th><th>Nombre</th><th>No. empleado</th><th>Activo</th><th></th></tr>
               </thead>
               <tbody id="users_rows"></tbody>
             </table>
@@ -483,22 +482,29 @@ async function delDoor(door_id) {
 async function loadUsers() {
   const rows = document.getElementById('users_rows');
   rows.innerHTML = '';
+
   const data = await api('/api/nfc-users');
 
   for (const u of data) {
-    const safeName = String(u.full_name || '').replace(/'/g, "\\'");
-    const safeEmp = String(u.employee_number || '').replace(/'/g, "\\'");
+    const safeName = String(u.full_name || '')
+      .replace(/\\/g, '\\\\')
+      .replace(/'/g, "\\'")
+      .replace(/"/g, '&quot;');
+
+    const safeEmp = String(u.employee_number || '')
+      .replace(/\\/g, '\\\\')
+      .replace(/'/g, "\\'")
+      .replace(/"/g, '&quot;');
 
     const tr = document.createElement('tr');
     tr.innerHTML = `
       <td>${u.id}</td>
-      <td><code>${u.uid_hex}</code></td>
-      <td>${u.full_name}</td>
+      <td>${u.full_name || ''}</td>
       <td>${u.employee_number || ''}</td>
       <td>${u.is_active ? '✅' : '❌'}</td>
       <td>
         <button class="btn btn-sm btn-outline-secondary"
-          onclick="editUser('${u.uid_hex}','${safeName}','${safeEmp}',${u.is_active})">
+          onclick="editUser(${u.id}, '${safeName}', '${safeEmp}', ${u.is_active})">
           Editar
         </button>
       </td>
@@ -508,31 +514,36 @@ async function loadUsers() {
 
   const sel = document.getElementById('a_uid');
   if (sel) {
-    sel.innerHTML = data.map(x => `<option value="${x.uid_hex}">${x.uid_hex} - ${x.full_name}</option>`).join('');
+    sel.innerHTML = data
+      .filter(x => x.uid_hex)
+      .map(x => `<option value="${x.uid_hex}">${x.uid_hex} - ${x.full_name}</option>`)
+      .join('');
   }
 
   const credSel = document.getElementById('cred_user_id');
   if (credSel) {
-    credSel.innerHTML = data.map(x => `<option value="${x.id}">${x.full_name} (${x.employee_number || 'sin empleado'})</option>`).join('');
+    credSel.innerHTML = data.map(
+      x => `<option value="${x.id}">${x.full_name} (${x.employee_number || 'sin empleado'})</option>`
+    ).join('');
   }
 }
 
-function editUser(uid_hex, full_name, employee_number, is_active) {
+function editUser(userId, full_name, employee_number, is_active) {
   document.getElementById('user_form_title').textContent = 'Editar usuario NFC';
-  document.getElementById('u_uid').value = uid_hex;
-  document.getElementById('u_uid').disabled = true;
-  document.getElementById('u_name').value = full_name;
-  document.getElementById('u_emp').value = employee_number;
-  document.getElementById('u_active').checked = is_active;
+  document.getElementById('u_id').value = userId;
+  document.getElementById('u_name').value = full_name || '';
+  document.getElementById('u_emp').value = employee_number || '';
+  document.getElementById('u_active').checked = !!is_active;
   document.getElementById('user_save_btn').textContent = 'Actualizar';
-  document.getElementById('user_save_btn').onclick = () => updateUser(uid_hex);
+  document.getElementById('user_save_btn').onclick = () => updateUser(userId);
   document.getElementById('user_cancel_btn').style.display = 'inline-block';
 }
 
 function resetUserForm() {
   document.getElementById('user_form_title').textContent = 'Crear usuario NFC';
-  document.getElementById('u_uid').disabled = false;
-  ['u_uid', 'u_name', 'u_emp'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('u_id').value = '';
+  document.getElementById('u_name').value = '';
+  document.getElementById('u_emp').value = '';
   document.getElementById('u_active').checked = true;
   document.getElementById('user_save_btn').textContent = 'Guardar';
   document.getElementById('user_save_btn').onclick = createUser;
@@ -540,13 +551,12 @@ function resetUserForm() {
   document.getElementById('user_msg').innerText = '';
 }
 
-async function updateUser(uid_hex) {
+async function updateUser(userId) {
   document.getElementById('user_msg').innerText = '';
   try {
-    await api('/api/nfc-users/' + encodeURIComponent(uid_hex), {
+    await api('/api/nfc-users/' + encodeURIComponent(userId), {
       method: 'PUT',
       body: JSON.stringify({
-        uid_hex,
         full_name: document.getElementById('u_name').value.trim(),
         employee_number: document.getElementById('u_emp').value.trim(),
         is_active: document.getElementById('u_active').checked
@@ -565,7 +575,6 @@ async function createUser() {
     await api('/api/nfc-users', {
       method: 'POST',
       body: JSON.stringify({
-        uid_hex: document.getElementById('u_uid').value.trim(),
         full_name: document.getElementById('u_name').value.trim(),
         employee_number: document.getElementById('u_emp').value.trim(),
         is_active: document.getElementById('u_active').checked
@@ -588,13 +597,14 @@ async function loadAccessMatrix() {
   try {
     const data = await api('/api/door-access');
     for (const r of data) {
+      const uid = r.uid_hex || r.uid || '';
       const tr = document.createElement('tr');
       tr.innerHTML = `
         <td><code>${r.door_id}</code></td>
-        <td><code>${r.uid_hex}</code></td>
+        <td><code>${uid}</code></td>
         <td>${r.full_name}</td>
         <td><span class="badge ${r.is_allowed ? 'bg-success' : 'bg-danger'}">${r.is_allowed ? 'Permitido' : 'Denegado'}</span></td>
-        <td><button class="btn btn-sm btn-outline-warning" onclick="toggleAccess('${r.door_id}','${r.uid_hex}')">Toggle</button></td>
+        <td><button class="btn btn-sm btn-outline-warning" onclick="toggleAccess('${r.door_id}','${uid}')">Toggle</button></td>
       `;
       tbody.appendChild(tr);
     }
@@ -888,6 +898,8 @@ async function assignEnrollmentCredential() {
 
     msg.className = 'small mt-2 text-success';
     msg.innerText = '✅ Credencial asignada correctamente.';
+    await loadUsers();
+    await loadAccessMatrix();
   } catch (e) {
     msg.className = 'small mt-2 text-danger';
     msg.innerText = e.message;

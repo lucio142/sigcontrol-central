@@ -38,7 +38,6 @@
     </span>
     <a class="btn btn-outline-light btn-sm" href="/map">Mapa 3D</a>
     <a id="admin_btn" class="btn btn-outline-light btn-sm" href="/admin" style="display:none;">Admin</a>
-    <a class="btn btn-outline-light btn-sm" href="/docs" target="_blank">API Docs</a>
     <button class="btn btn-outline-light btn-sm" onclick="logout()">Salir</button>
   </div>
 </nav>
@@ -354,7 +353,10 @@ async function createDoor() {
         door_id,
         name: document.getElementById('new_door_name').value.trim(),
         location: document.getElementById('new_door_location').value.trim(),
-        is_enabled: document.getElementById('new_door_enabled').value === 'true'
+        is_enabled: document.getElementById('new_door_enabled').value === 'true',
+        site: 'main',
+        x: 0.5,
+        y: 0.5
       })
     });
 
@@ -372,7 +374,16 @@ async function updateDoorField(el) {
   const d = DOORS_CACHE.find(x => x.door_id === door_id);
   if (!d) return;
 
-  const payload = { door_id: d.door_id, name: d.name ?? '', location: d.location ?? '', is_enabled: !!d.is_enabled };
+  const payload = {
+    door_id: d.door_id,
+    name: d.name ?? '',
+    location: d.location ?? '',
+    is_enabled: !!d.is_enabled,
+    site: d.site || 'main',
+    x: d.x ?? 0.5,
+    y: d.y ?? 0.5
+  };
+
   if (field === 'name') payload.name = el.value;
   if (field === 'location') payload.location = el.value;
   if (field === 'is_enabled') payload.is_enabled = !!el.checked;
@@ -407,18 +418,19 @@ async function loadAccessMatrix() {
     const data = await api('/api/door-access');
 
     for (const r of data) {
+      const uid = r.uid_hex || r.uid || '';
       const tr = document.createElement('tr');
       const disabledAttr = (ME && ME.can_edit) ? '' : 'disabled';
       const checkedAttr = r.is_allowed ? 'checked' : '';
 
       tr.innerHTML = `
         <td><code>${r.door_id}</code></td>
-        <td><code>${r.uid_hex}</code></td>
+        <td><code>${uid}</code></td>
         <td>${escapeHtml(r.full_name ?? '')}</td>
         <td>
           <div class="form-check form-switch m-0">
             <input class="form-check-input" type="checkbox" ${checkedAttr} ${disabledAttr}
-              data-door="${r.door_id}" data-uid="${r.uid_hex}" onchange="setAccess(this)">
+              data-door="${r.door_id}" data-uid="${uid}" onchange="setAccess(this)">
             <label class="form-check-label">
               <span>${r.is_allowed ? 'Permitido' : 'Denegado'}</span>
             </label>
@@ -588,7 +600,6 @@ async function refreshAll() {
 }
 
 async function init() {
-
   if (!sessionStorage.getItem('token')) { window.location.href = '/login'; return; }
   await loadMe();
   await loadDoors();
