@@ -144,6 +144,42 @@ class AccessCheckOut(BaseModel):
 
 
 # ---------------------------
+# ESP32 Access List / Offline Sync
+# ---------------------------
+class DeviceAccessEntryOut(BaseModel):
+    uid: str
+    name: str = ""
+    active: bool = True
+
+
+class DeviceAccessListOut(BaseModel):
+    door_id: str
+    is_enabled: bool
+    generated_at: datetime
+    users: list[DeviceAccessEntryOut]
+
+
+class DeviceEventIn(BaseModel):
+    uid: str = Field(default="", max_length=64)
+    result: str = Field(default="", max_length=40)
+    reason: str = Field(default="", max_length=120)
+    user_name: str = Field(default="", max_length=120)
+    ts_ms: Optional[int] = None
+    source: str = Field(default="door", max_length=40)
+
+
+class DeviceEventBatchIn(BaseModel):
+    door_id: str = Field(min_length=3, max_length=32)
+    events: list[DeviceEventIn] = []
+
+
+class DeviceEventBatchOut(BaseModel):
+    ok: bool
+    accepted: int
+    door_id: str
+
+
+# ---------------------------
 # Logs
 # ---------------------------
 class EventOut(BaseModel):

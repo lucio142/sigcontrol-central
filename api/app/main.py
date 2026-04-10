@@ -4,6 +4,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 from typing import Optional
+from datetime import datetime, timezone
 
 from app.db import init_db, get_db
 from app import crud, schemas, models
@@ -573,6 +574,43 @@ def device_heartbeat(
 ):
     crud.touch_device_last_seen(db, door.door_id)
     return {"ok": True, "door_id": door.door_id}
+
+
+# ---------- ESP32: access list for offline-first ----------
+@app.get("/api/device/access-list", response_model=schemas.DeviceAccessListOut)
+def device_access_list(
+    door: models.Door = Depends(require_device),
+    db: Session = Depends(get_db),
+):
+    crud.touch_device_last_seen(db, door.door_id)
+
+    users = crud.list_allowed_device_access_entries(db, door.id)
+    return schemas.DeviceAccessListOut(
+        door_id=door.door_id,
+        is_enabled=bool(door.is_enabled),
+        generated_at=datetime.now(timezone.utc),
+        users=[schemas.DeviceAccessEntryOut(**u) for u in users],
+    )
+
+
+# ---------- ESP32: offline events batch upload ----------
+@app.post("/api/device/events/batch", response_model=schemas.DeviceEventBatchOut)
+def device_events_batch(
+    payload: schemas.DeviceEventBatchIn,
+    door: models.Door = Depends(require_device),
+    db: Session = Depends(get_db),
+):
+    if payload.door_id.strip() != door.door_id:
+        raise HTTPException(status_code=403, detail="Door mismatch")
+
+    crud.touch_device_last_seen(db, door.door_id)
+    accepted = crud.log_device_events_batch(db, door.door_id, payload.events)
+
+    return schemas.DeviceEventBatchOut(
+        ok=True,
+        accepted=accepted,
+        door_id=door.door_id,
+    )
 
 
 # ---------- ESP32: access check ----------

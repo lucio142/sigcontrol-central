@@ -375,6 +375,66 @@ def list_door_access(db: Session) -> list[tuple[str, str, str, bool]]:
     return out
 
 
+def list_allowed_device_access_entries(db: Session, door_pk: int) -> list[dict]:
+    """
+    Devuelve todos los UID activos/autorizados para una puerta.
+    Incluye:
+    - uid legado en nfc_users.uid_hex
+    - credenciales activas en nfc_credentials
+    """
+    rows = (
+        db.query(models.NfcUser)
+        .join(models.DoorAccess, models.DoorAccess.nfc_user_id == models.NfcUser.id)
+        .filter(
+            models.DoorAccess.door_id == door_pk,
+            models.DoorAccess.is_allowed == True,
+            models.NfcUser.is_active == True,
+        )
+        .order_by(models.NfcUser.full_name.asc(), models.NfcUser.id.asc())
+        .all()
+    )
+
+    out: list[dict] = []
+    seen: set[str] = set()
+
+    for user in rows:
+        if user.uid_hex:
+            uid = normalize_uid(user.uid_hex)
+            if uid and uid not in seen:
+                seen.add(uid)
+                out.append(
+                    {
+                        "uid": uid,
+                        "name": user.full_name or "",
+                        "active": True,
+                    }
+                )
+
+        creds = (
+            db.query(models.NfcCredential)
+            .filter(
+                models.NfcCredential.nfc_user_id == user.id,
+                models.NfcCredential.is_active == True,
+            )
+            .order_by(models.NfcCredential.id.asc())
+            .all()
+        )
+
+        for cred in creds:
+            uid = normalize_uid(cred.uid_hex)
+            if uid and uid not in seen:
+                seen.add(uid)
+                out.append(
+                    {
+                        "uid": uid,
+                        "name": user.full_name or "",
+                        "active": True,
+                    }
+                )
+
+    return out
+
+
 # =========================
 # LOGS
 # =========================
@@ -425,6 +485,43 @@ def get_last_event_by_door(db: Session, door_id: str) -> models.EventLog | None:
         .order_by(models.EventLog.ts.desc())
         .first()
     )
+
+
+def log_device_events_batch(
+    db: Session,
+    door_id: str,
+    events: list,
+) -> int:
+    accepted = 0
+
+    for ev in events:
+        uid = normalize_uid(getattr(ev, "uid", "") or "")
+        result = (getattr(ev, "result", "") or "")[:40]
+        reason = (getattr(ev, "reason", "") or "")[:120]
+        user_name = (getattr(ev, "user_name", "") or "")[:120]
+        ts_ms = getattr(ev, "ts_ms", None)
+        source = (getattr(ev, "source", "") or "door")[:40]
+
+        details_parts = []
+        if reason:
+            details_parts.append(f"reason={reason}")
+        if ts_ms is not None:
+            details_parts.append(f"ts_ms={ts_ms}")
+        if source:
+            details_parts.append(f"source={source}")
+
+        log_event(
+            db,
+            type="access",
+            door=door_id,
+            uid=uid,
+            name=user_name,
+            result=result,
+            details=";".join(details_parts),
+        )
+        accepted += 1
+
+    return accepted
 
 
 # =========================
@@ -602,12 +699,14 @@ def create_enrollment_station_key(
     db.refresh(obj)
     return obj
 
+
 def list_enrollment_station_keys(db: Session) -> list[models.EnrollmentStationKey]:
     return (
         db.query(models.EnrollmentStationKey)
         .order_by(models.EnrollmentStationKey.station_name.asc())
         .all()
     )
+
 
 def get_enrollment_station_key(
     db: Session,
