@@ -6,241 +6,678 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <title>SigControl - Admin</title>
 </head>
+
 <body>
+
 <nav class="navbar navbar-dark bg-dark px-3">
   <span class="navbar-brand">SigControl Central</span>
+
   <div class="d-flex gap-2">
-    <a class="btn btn-outline-light btn-sm" href="/dashboard">Dashboard</a>
-    <button class="btn btn-outline-light btn-sm" onclick="logout()">Salir</button>
+    <a class="btn btn-outline-light btn-sm" href="/dashboard">
+      Dashboard
+    </a>
+
+    <button class="btn btn-outline-light btn-sm" onclick="logout()">
+      Salir
+    </button>
   </div>
 </nav>
 
+
 <div class="container py-4">
+
   <ul class="nav nav-tabs" id="tabs">
-    <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#doors">Puertas</button></li>
-    <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#users">Usuarios NFC</button></li>
-    <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#access">Permisos</button></li>
-    <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#devices">Dispositivos ESP32</button></li>
-    <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#enroll">Enrolamiento</button></li>
+
+    <li class="nav-item">
+      <button
+        class="nav-link active"
+        data-bs-toggle="tab"
+        data-bs-target="#doors">
+        Puertas
+      </button>
+    </li>
+
+    <li class="nav-item">
+      <button
+        class="nav-link"
+        data-bs-toggle="tab"
+        data-bs-target="#users">
+        Usuarios NFC
+      </button>
+    </li>
+
+    <li class="nav-item">
+      <button
+        class="nav-link"
+        data-bs-toggle="tab"
+        data-bs-target="#access">
+        Permisos
+      </button>
+    </li>
+
+    <li class="nav-item">
+      <button
+        class="nav-link"
+        data-bs-toggle="tab"
+        data-bs-target="#devices">
+        Dispositivos ESP32
+      </button>
+    </li>
+
+    <li class="nav-item">
+      <button
+        class="nav-link"
+        data-bs-toggle="tab"
+        data-bs-target="#enroll">
+        Enrolamiento
+      </button>
+    </li>
+
   </ul>
+
 
   <div class="tab-content pt-3">
 
-    <!-- PUERTAS -->
+    <!-- ========================================================= -->
+    <!-- PUERTAS                                                   -->
+    <!-- ========================================================= -->
+
     <div class="tab-pane fade show active" id="doors">
+
       <div class="row g-3">
+
         <div class="col-lg-4">
+
           <div class="card">
             <div class="card-body">
+
               <h6>Crear puerta</h6>
+
               <div class="mb-2">
-                <label class="form-label">door_id</label>
-                <input id="door_id" class="form-control" placeholder="D-001">
+                <label class="form-label">
+                  door_id
+                </label>
+
+                <input
+                  id="door_id"
+                  class="form-control"
+                  placeholder="D-001">
               </div>
+
+
               <div class="mb-2">
-                <label class="form-label">Nombre</label>
-                <input id="door_name" class="form-control" placeholder="Acceso Principal">
+                <label class="form-label">
+                  Nombre
+                </label>
+
+                <input
+                  id="door_name"
+                  class="form-control"
+                  placeholder="Acceso Principal">
               </div>
+
+
               <div class="mb-2">
-                <label class="form-label">Ubicación</label>
-                <input id="door_loc" class="form-control" placeholder="Planta 1">
+                <label class="form-label">
+                  Ubicación
+                </label>
+
+                <input
+                  id="door_loc"
+                  class="form-control"
+                  placeholder="Planta 1">
               </div>
+
+
               <div class="form-check mb-3">
-                <input id="door_enabled" class="form-check-input" type="checkbox" checked>
-                <label class="form-check-label">Habilitada</label>
+
+                <input
+                  id="door_enabled"
+                  class="form-check-input"
+                  type="checkbox"
+                  checked>
+
+                <label class="form-check-label">
+                  Habilitada
+                </label>
+
               </div>
-              <button class="btn btn-primary w-100" onclick="createDoor()">Guardar</button>
-              <div id="door_msg" class="small text-danger mt-2"></div>
+
+
+              <button
+                class="btn btn-primary w-100"
+                onclick="createDoor()">
+                Guardar
+              </button>
+
+              <div
+                id="door_msg"
+                class="small text-danger mt-2">
+              </div>
+
             </div>
           </div>
+
         </div>
 
+
         <div class="col-lg-8">
+
           <div class="d-flex justify-content-between align-items-center mb-2">
-            <h6 class="m-0">Lista de puertas</h6>
-            <button class="btn btn-secondary btn-sm" onclick="loadDoors()">Actualizar</button>
+
+            <h6 class="m-0">
+              Lista de puertas
+            </h6>
+
+            <button
+              class="btn btn-secondary btn-sm"
+              onclick="loadDoors()">
+              Actualizar
+            </button>
+
           </div>
+
+
           <div class="table-responsive">
+
             <table class="table table-striped align-middle">
+
               <thead>
-                <tr><th>ID</th><th>door_id</th><th>Nombre</th><th>Ubicación</th><th>Enabled</th><th></th></tr>
+                <tr>
+                  <th>ID</th>
+                  <th>door_id</th>
+                  <th>Nombre</th>
+                  <th>Ubicación</th>
+                  <th>Enabled</th>
+                  <th></th>
+                </tr>
               </thead>
+
               <tbody id="doors_rows"></tbody>
+
             </table>
+
           </div>
+
         </div>
+
       </div>
+
     </div>
 
-    <!-- USUARIOS NFC -->
+
+    <!-- ========================================================= -->
+    <!-- USUARIOS NFC                                              -->
+    <!-- ========================================================= -->
+
     <div class="tab-pane fade" id="users">
+
       <div class="row g-3">
+
         <div class="col-lg-4">
+
           <div class="card">
             <div class="card-body">
-              <h6 id="user_form_title">Crear usuario NFC</h6>
 
-              <input type="hidden" id="u_id">
+              <h6 id="user_form_title">
+                Crear usuario NFC
+              </h6>
+
+              <input
+                type="hidden"
+                id="u_id">
+
 
               <div class="mb-2">
-                <label class="form-label">Nombre completo</label>
-                <input id="u_name" class="form-control" placeholder="Juan Pérez">
+
+                <label class="form-label">
+                  Nombre completo
+                </label>
+
+                <input
+                  id="u_name"
+                  class="form-control"
+                  placeholder="Juan Pérez">
+
               </div>
+
+
               <div class="mb-2">
-                <label class="form-label">No. empleado</label>
-                <input id="u_emp" class="form-control" placeholder="12345">
+
+                <label class="form-label">
+                  No. empleado
+                </label>
+
+                <input
+                  id="u_emp"
+                  class="form-control"
+                  placeholder="12345">
+
               </div>
+
+
               <div class="form-check mb-3">
-                <input id="u_active" class="form-check-input" type="checkbox" checked>
-                <label class="form-check-label">Activo</label>
+
+                <input
+                  id="u_active"
+                  class="form-check-input"
+                  type="checkbox"
+                  checked>
+
+                <label class="form-check-label">
+                  Activo
+                </label>
+
               </div>
+
+
               <div class="d-flex gap-2">
-                <button id="user_save_btn" class="btn btn-primary w-100" onclick="createUser()">Guardar</button>
-                <button id="user_cancel_btn" class="btn btn-outline-secondary" style="display:none" onclick="resetUserForm()">Cancelar</button>
+
+                <button
+                  id="user_save_btn"
+                  class="btn btn-primary w-100"
+                  onclick="createUser()">
+                  Guardar
+                </button>
+
+                <button
+                  id="user_cancel_btn"
+                  class="btn btn-outline-secondary"
+                  style="display:none"
+                  onclick="resetUserForm()">
+                  Cancelar
+                </button>
+
               </div>
-              <div id="user_msg" class="small text-danger mt-2"></div>
+
+
+              <div
+                id="user_msg"
+                class="small text-danger mt-2">
+              </div>
+
             </div>
           </div>
+
         </div>
 
+
         <div class="col-lg-8">
+
           <div class="d-flex justify-content-between align-items-center mb-2">
-            <h6 class="m-0">Lista usuarios NFC</h6>
-            <button class="btn btn-secondary btn-sm" onclick="loadUsers()">Actualizar</button>
+
+            <h6 class="m-0">
+              Lista usuarios NFC
+            </h6>
+
+            <button
+              class="btn btn-secondary btn-sm"
+              onclick="loadUsers()">
+              Actualizar
+            </button>
+
           </div>
+
+
           <div class="table-responsive">
+
             <table class="table table-striped align-middle">
+
               <thead>
-                <tr><th>ID</th><th>Nombre</th><th>No. empleado</th><th>Activo</th><th></th></tr>
+                <tr>
+                  <th>ID</th>
+                  <th>Nombre</th>
+                  <th>No. empleado</th>
+                  <th>Activo</th>
+                  <th></th>
+                </tr>
               </thead>
+
               <tbody id="users_rows"></tbody>
+
             </table>
+
           </div>
+
+
+          <!-- CREDENCIALES DEL USUARIO -->
 
           <div class="card mt-3">
+
             <div class="card-body">
+
               <div class="d-flex justify-content-between align-items-center mb-2">
-                <h6 class="m-0">Credenciales del usuario</h6>
-                <button class="btn btn-secondary btn-sm" onclick="loadUserCredentials()">Actualizar</button>
+
+                <h6 class="m-0">
+                  Credenciales del usuario
+                </h6>
+
+                <button
+                  class="btn btn-secondary btn-sm"
+                  onclick="loadUserCredentials()">
+                  Actualizar
+                </button>
+
               </div>
+
 
               <div class="row g-2 mb-3">
+
                 <div class="col-md-8">
-                  <label class="form-label">Usuario NFC</label>
-                  <select id="cred_manage_user_id" class="form-select" onchange="loadUserCredentials()"></select>
+
+                  <label class="form-label">
+                    Usuario NFC
+                  </label>
+
+                  <select
+                    id="cred_manage_user_id"
+                    class="form-select"
+                    onchange="loadUserCredentials()">
+                  </select>
+
                 </div>
+
+
                 <div class="col-md-4 d-flex align-items-end">
-                  <button class="btn btn-outline-primary w-100" onclick="loadUserCredentials()">Ver credenciales</button>
+
+                  <button
+                    class="btn btn-outline-primary w-100"
+                    onclick="loadUserCredentials()">
+                    Ver credenciales
+                  </button>
+
                 </div>
+
               </div>
 
+
               <div class="table-responsive">
+
                 <table class="table table-sm table-striped align-middle">
+
                   <thead>
-                    <tr><th>ID</th><th>UID</th><th>Tipo</th><th>Activo</th><th></th></tr>
+                    <tr>
+                      <th>ID</th>
+                      <th>UID</th>
+                      <th>Tipo</th>
+                      <th>Activo</th>
+                      <th></th>
+                    </tr>
                   </thead>
+
                   <tbody id="user_credentials_rows"></tbody>
+
                 </table>
+
               </div>
 
-              <div id="user_credentials_msg" class="small text-danger mt-2"></div>
+
+              <div
+                id="user_credentials_msg"
+                class="small text-danger mt-2">
+              </div>
+
+
               <div class="form-text">
-                Si un tag o sticker se pierde, elimínalo aquí y luego vuelve a enrolar uno nuevo.
+                Si un tag o sticker se pierde, elimínalo aquí y luego
+                vuelve a enrolar uno nuevo.
               </div>
+
             </div>
+
           </div>
+
         </div>
+
       </div>
+
     </div>
 
-    <!-- PERMISOS -->
+
+    <!-- ========================================================= -->
+    <!-- PERMISOS                                                  -->
+    <!-- ========================================================= -->
+
     <div class="tab-pane fade" id="access">
+
       <div class="row g-3">
+
         <div class="col-lg-4">
+
           <div class="card">
+
             <div class="card-body">
-              <h6>Asignar permiso</h6>
+
+              <h6>
+                Asignar permiso
+              </h6>
+
+
               <div class="mb-2">
-                <label class="form-label">Puerta (door_id)</label>
-                <select id="a_door" class="form-select"></select>
+
+                <label class="form-label">
+                  Puerta (door_id)
+                </label>
+
+                <select
+                  id="a_door"
+                  class="form-select">
+                </select>
+
               </div>
+
+
               <div class="mb-2">
-                <label class="form-label">Usuario (UID)</label>
-                <select id="a_uid" class="form-select"></select>
+
+                <label class="form-label">
+                  Usuario (UID)
+                </label>
+
+                <select
+                  id="a_uid"
+                  class="form-select">
+                </select>
+
               </div>
+
+
               <div class="form-check mb-3">
-                <input id="a_allowed" class="form-check-input" type="checkbox" checked>
-                <label class="form-check-label">Permitido</label>
+
+                <input
+                  id="a_allowed"
+                  class="form-check-input"
+                  type="checkbox"
+                  checked>
+
+                <label class="form-check-label">
+                  Permitido
+                </label>
+
               </div>
-              <button class="btn btn-primary w-100" onclick="setAccess()">Guardar permiso</button>
-              <div id="acc_msg" class="small mt-2"></div>
+
+
+              <button
+                class="btn btn-primary w-100"
+                onclick="setAccess()">
+                Guardar permiso
+              </button>
+
+
+              <div
+                id="acc_msg"
+                class="small mt-2">
+              </div>
+
             </div>
+
           </div>
+
         </div>
 
+
         <div class="col-lg-8">
+
           <div class="card">
+
             <div class="card-body">
+
               <div class="d-flex justify-content-between align-items-center mb-2">
-                <h6 class="m-0">Permisos asignados</h6>
-                <button class="btn btn-secondary btn-sm" onclick="loadAccessMatrix()">Actualizar</button>
+
+                <h6 class="m-0">
+                  Permisos asignados
+                </h6>
+
+                <button
+                  class="btn btn-secondary btn-sm"
+                  onclick="loadAccessMatrix()">
+                  Actualizar
+                </button>
+
               </div>
+
+
               <div class="table-responsive">
+
                 <table class="table table-sm table-striped align-middle">
+
                   <thead>
-                    <tr><th>Puerta</th><th>UID</th><th>Nombre</th><th>Acceso</th><th></th></tr>
+                    <tr>
+                      <th>Puerta</th>
+                      <th>UID</th>
+                      <th>Nombre</th>
+                      <th>Acceso</th>
+                      <th></th>
+                    </tr>
                   </thead>
+
                   <tbody id="access_rows"></tbody>
+
                 </table>
+
               </div>
-              <div id="access_msg" class="small text-danger"></div>
+
+
+              <div
+                id="access_msg"
+                class="small text-danger">
+              </div>
+
             </div>
+
           </div>
+
         </div>
+
       </div>
+
     </div>
 
-    <!-- DISPOSITIVOS ESP32 -->
+
+    <!-- ========================================================= -->
+    <!-- DISPOSITIVOS ESP32                                        -->
+    <!-- ========================================================= -->
+
     <div class="tab-pane fade" id="devices">
+
       <div class="row g-3">
 
         <div class="col-lg-4">
+
           <div class="card">
+
             <div class="card-body">
-              <h6>Registrar ESP32</h6>
+
+              <h6>
+                Registrar ESP32
+              </h6>
+
 
               <div class="mb-2">
-                <label class="form-label">Puerta</label>
-                <select id="dev_door" class="form-select"></select>
+
+                <label class="form-label">
+                  Puerta
+                </label>
+
+                <select
+                  id="dev_door"
+                  class="form-select">
+                </select>
+
               </div>
+
 
               <div class="mb-2">
-                <label class="form-label">Clave</label>
-                <input id="dev_key" class="form-control" placeholder="clave segura">
+
+                <label class="form-label">
+                  Clave
+                </label>
+
+                <input
+                  id="dev_key"
+                  class="form-control"
+                  placeholder="clave segura">
+
               </div>
+
 
               <div class="mb-2">
-                <label class="form-label">Descripción</label>
-                <input id="dev_desc" class="form-control" placeholder="ESP32 puerta principal">
+
+                <label class="form-label">
+                  Descripción
+                </label>
+
+                <input
+                  id="dev_desc"
+                  class="form-control"
+                  placeholder="ESP32 puerta principal">
+
               </div>
 
-              <button class="btn btn-primary w-100" onclick="createDevice()">Registrar</button>
-              <div id="dev_msg" class="small mt-2"></div>
+
+              <button
+                class="btn btn-primary w-100"
+                onclick="createDevice()">
+                Registrar
+              </button>
+
+
+              <div
+                id="dev_msg"
+                class="small mt-2">
+              </div>
+
             </div>
+
           </div>
+
         </div>
 
+
         <div class="col-lg-8">
+
           <div class="card">
+
             <div class="card-body">
 
               <div class="d-flex justify-content-between mb-2">
-                <h6 class="m-0">Dispositivos registrados</h6>
-                <button class="btn btn-secondary btn-sm" onclick="loadDevices()">Actualizar</button>
+
+                <h6 class="m-0">
+                  Dispositivos registrados
+                </h6>
+
+                <button
+                  class="btn btn-secondary btn-sm"
+                  onclick="loadDevices()">
+                  Actualizar
+                </button>
+
               </div>
 
+
               <div class="table-responsive">
+
                 <table class="table table-striped">
+
                   <thead>
                     <tr>
                       <th>Puerta</th>
@@ -250,956 +687,3266 @@
                       <th></th>
                     </tr>
                   </thead>
+
                   <tbody id="devices_rows"></tbody>
+
                 </table>
+
               </div>
 
-              <div id="devices_msg" class="small text-danger mt-2"></div>
+
+              <div
+                id="devices_msg"
+                class="small text-danger mt-2">
+              </div>
 
             </div>
+
           </div>
+
         </div>
 
       </div>
+
     </div>
 
-    <!-- ENROLAMIENTO -->
+
+    <!-- ========================================================= -->
+    <!-- ENROLAMIENTO AKUVOX USB                                   -->
+    <!-- ========================================================= -->
+
     <div class="tab-pane fade" id="enroll">
+
       <div class="row g-3">
 
         <div class="col-lg-4">
+
           <div class="card">
+
             <div class="card-body">
-              <h6>Crear estación de enrolamiento</h6>
 
-              <div class="mb-2">
-                <label class="form-label">Estaciones guardadas</label>
-                <div class="d-flex gap-2">
-                  <select id="st_saved_sel" class="form-select"></select>
-                  <button class="btn btn-outline-secondary" type="button" onclick="applySelectedStationToForms()">Cargar</button>
-                </div>
-              </div>
+              <h5 class="mb-1">
+                Enrolar credencial
+              </h5>
 
-              <div class="mb-2">
-                <label class="form-label">Station name</label>
-                <input id="st_name" class="form-control" placeholder="main">
-              </div>
+              <p class="text-muted small mb-3">
+                Registro directo mediante lector USB Akuvox ACR-CID01.
+              </p>
 
-              <div class="mb-2">
-                <label class="form-label">Clave estación</label>
-                <input id="st_key" class="form-control" placeholder="clave segura estación">
-                <div class="form-text">La clave no se puede recuperar después; solo se guarda como hash.</div>
-              </div>
 
               <div class="mb-3">
-                <label class="form-label">Descripción</label>
-                <input id="st_desc" class="form-control" placeholder="Estación principal de enrolamiento">
+
+                <label class="form-label">
+                  Usuario NFC
+                </label>
+
+                <select
+                  id="akuvox_user_id"
+                  class="form-select">
+
+                  <option value="">
+                    Seleccione un usuario...
+                  </option>
+
+                </select>
+
+                <div class="form-text">
+                  La credencial quedará vinculada a este usuario.
+                </div>
+
               </div>
 
-              <button class="btn btn-primary w-100" onclick="createStationKey()">Guardar estación</button>
-              <div id="station_msg" class="small mt-2"></div>
+
+              <div class="mb-3">
+
+                <label class="form-label">
+                  Tipo de credencial
+                </label>
+
+                <select
+                  id="akuvox_tag_type"
+                  class="form-select">
+
+                  <option value="card">
+                    Tarjeta
+                  </option>
+
+                  <option value="sticker">
+                    Sticker
+                  </option>
+
+                  <option value="tag">
+                    Llavero / Tag
+                  </option>
+
+                </select>
+
+              </div>
+
+
+              <button
+                id="akuvox_start_btn"
+                type="button"
+                class="btn btn-primary w-100"
+                onclick="startAkuvoxEnrollment()">
+                Iniciar lectura
+              </button>
+
+
+              <button
+                id="akuvox_cancel_btn"
+                type="button"
+                class="btn btn-outline-secondary w-100 mt-2"
+                onclick="cancelAkuvoxEnrollment()"
+                style="display:none;">
+                Cancelar lectura
+              </button>
+
+
+              <div
+                id="akuvox_msg"
+                class="small mt-3">
+              </div>
+
             </div>
+
           </div>
+
 
           <div class="card mt-3">
+
             <div class="card-body">
-              <h6>Iniciar sesión de enrolamiento</h6>
 
-              <div class="mb-2">
-                <label class="form-label">Estación guardada</label>
-                <select id="en_station_sel" class="form-select" onchange="applySelectedStationToForms()"></select>
+              <h6>
+                Estado del lector
+              </h6>
+
+
+              <div class="d-flex align-items-center gap-2 mb-3">
+
+                <span
+                  id="akuvox_status_badge"
+                  class="badge bg-secondary">
+                  En espera
+                </span>
+
+                <span
+                  id="akuvox_status_text"
+                  class="small text-muted">
+                  Inicie una lectura.
+                </span>
+
               </div>
 
-              <div class="mb-2">
-                <label class="form-label">Estación</label>
-                <input id="en_station_name" class="form-control" placeholder="main">
+
+              <div class="small text-muted">
+                El Akuvox se comunica con esta página como teclado USB HID.
+                No requiere una aplicación de enrolamiento permanente.
               </div>
 
-              <div class="mb-2">
-                <label class="form-label">Tipo de tag</label>
-                <select id="en_tag_type" class="form-select">
-                  <option value="tag">tag</option>
-                  <option value="sticker">sticker</option>
-                  <option value="card">card</option>
-                </select>
-              </div>
-
-              <button class="btn btn-success w-100" onclick="startEnrollment()">Iniciar enrolamiento</button>
-              <div id="enroll_msg" class="small mt-2"></div>
             </div>
+
           </div>
+
         </div>
 
+
         <div class="col-lg-8">
+
           <div class="card">
+
             <div class="card-body">
-              <div class="d-flex justify-content-between align-items-center mb-2">
-                <h6 class="m-0">Estado de sesión</h6>
-                <div class="d-flex gap-2">
-                  <button class="btn btn-secondary btn-sm" onclick="refreshEnrollment(false)">Actualizar</button>
-                  <button class="btn btn-outline-primary btn-sm" onclick="consumeEnrollment()">Consumir</button>
+
+              <div class="d-flex justify-content-between align-items-center mb-3">
+
+                <div>
+
+                  <h5 class="m-0">
+                    Lector USB Akuvox
+                  </h5>
+
+                  <small class="text-muted">
+                    Captura y normalización automática
+                  </small>
+
                 </div>
+
+
+                <span
+                  id="akuvox_reader_badge"
+                  class="badge bg-secondary">
+                  INACTIVO
+                </span>
+
               </div>
 
-              <div class="row g-3">
-                <div class="col-md-4">
-                  <label class="form-label">Session ID</label>
-                  <input id="en_session_id" class="form-control" readonly>
+
+              <div
+                id="akuvox_idle_panel"
+                class="border rounded p-4 text-center bg-light">
+
+                <div style="font-size:42px;">
+                  💳
                 </div>
-                <div class="col-md-4">
-                  <label class="form-label">Estado</label>
-                  <input id="en_status" class="form-control" readonly>
-                </div>
-                <div class="col-md-4">
-                  <label class="form-label">UID leído</label>
-                  <input id="en_uid" class="form-control" readonly>
-                </div>
-                <div class="col-md-6">
-                  <label class="form-label">Creado</label>
-                  <input id="en_created" class="form-control" readonly>
-                </div>
-                <div class="col-md-6">
-                  <label class="form-label">Leído</label>
-                  <input id="en_read_at" class="form-control" readonly>
-                </div>
+
+                <h5 class="mt-2 mb-2">
+                  Lector preparado
+                </h5>
+
+                <p class="text-muted mb-0">
+                  Seleccione un usuario y presione
+                  <strong>Iniciar lectura</strong>.
+                </p>
+
               </div>
 
-              <div id="enroll_status_msg" class="small mt-3"></div>
 
-              <hr>
+              <div
+                id="akuvox_reader_panel"
+                class="border rounded p-4"
+                style="display:none;">
 
-              <h6>Asignar UID leído a usuario NFC</h6>
-              <div class="row g-2">
-                <div class="col-md-6">
-                  <label class="form-label">Usuario NFC</label>
-                  <select id="cred_user_id" class="form-select"></select>
+                <div class="text-center mb-3">
+
+                  <div style="font-size:42px;">
+                    💳
+                  </div>
+
+                  <h5
+                    id="akuvox_reader_message"
+                    class="mt-2">
+                    Acerque la credencial al lector
+                  </h5>
+
+                  <p class="text-muted mb-0">
+                    Mantenga esta ventana activa durante la lectura.
+                  </p>
+
                 </div>
-                <div class="col-md-3">
-                  <label class="form-label">Tipo</label>
-                  <select id="cred_tag_type" class="form-select">
-                    <option value="tag">tag</option>
-                    <option value="sticker">sticker</option>
-                    <option value="card">card</option>
-                  </select>
+
+
+                <input
+                  id="akuvox_raw_input"
+                  type="text"
+                  class="form-control text-center font-monospace"
+                  autocomplete="off"
+                  autocapitalize="characters"
+                  spellcheck="false"
+                  placeholder="Esperando credencial..."
+                  oninput="handleAkuvoxInput()"
+                  onkeydown="handleAkuvoxKeydown(event)">
+
+
+                <div
+                  id="akuvox_waiting"
+                  class="text-center small text-muted mt-3">
+                  Esperando lectura...
                 </div>
-                <div class="col-md-3 d-flex align-items-end">
-                  <button class="btn btn-primary w-100" onclick="assignEnrollmentCredential()">Asignar credencial</button>
+
+
+                <div
+                  id="akuvox_result"
+                  class="mt-4"
+                  style="display:none;">
+
+                  <hr>
+
+                  <h6 class="mb-3">
+                    Credencial detectada
+                  </h6>
+
+
+                  <div class="row g-3">
+
+                    <div class="col-md-6">
+
+                      <label class="form-label">
+                        Lectura original Akuvox
+                      </label>
+
+                      <input
+                        id="akuvox_raw_display"
+                        class="form-control font-monospace"
+                        readonly>
+
+                    </div>
+
+
+                    <div class="col-md-6">
+
+                      <label class="form-label">
+                        UID SigControl / Wiegand 34
+                      </label>
+
+                      <input
+                        id="akuvox_uid"
+                        class="form-control font-monospace fw-bold"
+                        readonly>
+
+                    </div>
+
+                  </div>
+
+
+                  <div class="alert alert-success mt-3 mb-0">
+
+                    <strong>
+                      Lectura correcta.
+                    </strong>
+
+                    La credencial fue convertida al identificador
+                    utilizado por los lectores Hikvision de las puertas.
+
+                  </div>
+
+
+                  <div class="d-flex gap-2 mt-3">
+
+                    <button
+                      id="akuvox_save_btn"
+                      type="button"
+                      class="btn btn-success"
+                      onclick="saveAkuvoxCredential()">
+                      Confirmar y asignar
+                    </button>
+
+
+                    <button
+                      type="button"
+                      class="btn btn-outline-primary"
+                      onclick="retryAkuvoxEnrollment()">
+                      Leer nuevamente
+                    </button>
+
+
+                    <button
+                      type="button"
+                      class="btn btn-outline-secondary"
+                      onclick="cancelAkuvoxEnrollment()">
+                      Cancelar
+                    </button>
+
+                  </div>
+
                 </div>
+
               </div>
 
-              <div id="cred_msg" class="small mt-2"></div>
+
+              <div
+                id="akuvox_saved_panel"
+                class="alert alert-success mt-3"
+                style="display:none;">
+
+                <h6 class="alert-heading">
+                  Credencial asignada correctamente
+                </h6>
+
+                <div id="akuvox_saved_text"></div>
+
+              </div>
+
             </div>
+
           </div>
+
+
+          <div class="card mt-3">
+
+            <div class="card-body">
+
+              <h6>
+                Información de lectura
+              </h6>
+
+              <p class="small text-muted">
+                Permite comprobar la lectura original del Akuvox y el
+                identificador que utilizará SigControl.
+              </p>
+
+
+              <div class="row g-2">
+
+                <div class="col-md-6">
+
+                  <div class="border rounded p-3">
+
+                    <div class="small text-muted">
+                      Akuvox USB
+                    </div>
+
+                    <code id="akuvox_debug_raw">
+                      —
+                    </code>
+
+                  </div>
+
+                </div>
+
+
+                <div class="col-md-6">
+
+                  <div class="border rounded p-3">
+
+                    <div class="small text-muted">
+                      SigControl / Hikvision W34
+                    </div>
+
+                    <code id="akuvox_debug_uid">
+                      —
+                    </code>
+
+                  </div>
+
+                </div>
+
+              </div>
+
+            </div>
+
+          </div>
+
         </div>
 
       </div>
+
     </div>
 
   </div>
+
 </div>
 
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
 <script>
-let currentEnrollmentSessionId = null;
-let enrollmentPollTimer = null;
-let savedStations = [];
+
+let akuvoxEnrollmentActive = false;
+let akuvoxInputTimer = null;
+let akuvoxLastRaw = '';
+let akuvoxLastUid = '';
+
 
 async function api(path, opts = {}) {
+
   const token = sessionStorage.getItem('token');
-  if (!token) { window.location.href = '/login'; return; }
 
-  const headers = { 'Authorization': 'Bearer ' + token, ...(opts.headers || {}) };
-  const method = (opts.method || 'GET').toUpperCase();
-  if (['POST', 'PUT', 'PATCH'].includes(method)) {
-    headers['Content-Type'] = 'application/json';
-  }
-
-  const r = await fetch(path, { ...opts, headers });
-
-  if (r.status === 401) {
-    sessionStorage.removeItem('token');
+  if (!token) {
     window.location.href = '/login';
     return;
   }
 
+
+  const headers = {
+    'Authorization': 'Bearer ' + token,
+    ...(opts.headers || {})
+  };
+
+
+  const method =
+    (opts.method || 'GET').toUpperCase();
+
+
+  if (['POST', 'PUT', 'PATCH'].includes(method)) {
+    headers['Content-Type'] = 'application/json';
+  }
+
+
+  const r =
+    await fetch(
+      path,
+      {
+        ...opts,
+        headers
+      }
+    );
+
+
+  if (r.status === 401) {
+
+    sessionStorage.removeItem('token');
+
+    window.location.href =
+      '/login';
+
+    return;
+  }
+
+
   if (!r.ok) {
+
     let detail = '';
+
     try {
-      const body = await r.json();
-      detail = body.detail || r.statusText;
-    } catch {
-      detail = r.statusText;
+
+      const body =
+        await r.json();
+
+      detail =
+        body.detail ||
+        r.statusText;
+
     }
+
+    catch {
+
+      detail =
+        r.statusText;
+
+    }
+
+
     if (Array.isArray(detail)) {
-      detail = detail.map(x => x.msg || JSON.stringify(x)).join(' | ');
+
+      detail =
+        detail
+          .map(
+            x =>
+              x.msg ||
+              JSON.stringify(x)
+          )
+          .join(' | ');
+
     }
+
+
     throw new Error(detail);
   }
 
-  const ct = r.headers.get('content-type') || '';
-  return ct.includes('application/json') ? r.json() : r.text();
+
+  const ct =
+    r.headers.get('content-type') || '';
+
+
+  return ct.includes('application/json')
+    ? r.json()
+    : r.text();
 }
+
 
 function logout() {
+
   sessionStorage.removeItem('token');
-  window.location.href = '/login';
+
+  window.location.href =
+    '/login';
 }
 
+
 function fmtTs(raw) {
-  if (!raw) return '—';
+
+  if (!raw) {
+    return '—';
+  }
+
+
   try {
-    return new Date(raw).toLocaleString('es-MX', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit'
-    });
-  } catch {
+
+    return new Date(raw)
+      .toLocaleString(
+        'es-MX',
+        {
+          day: '2-digit',
+          month: '2-digit',
+          year: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit'
+        }
+      );
+
+  }
+
+  catch {
+
     return raw;
+
   }
 }
 
 /* ========================= PUERTAS ========================= */
+
 async function loadDoors() {
-  const rows = document.getElementById('doors_rows');
+
+  const rows =
+    document.getElementById('doors_rows');
+
   rows.innerHTML = '';
 
-  const data = await api('/api/doors');
+
+  const data =
+    await api('/api/doors');
+
 
   for (const d of data) {
-    const tr = document.createElement('tr');
+
+    const tr =
+      document.createElement('tr');
+
     tr.innerHTML = `
       <td>${d.id}</td>
       <td><code>${d.door_id}</code></td>
       <td>${d.name || ''}</td>
       <td>${d.location || ''}</td>
       <td>${d.is_enabled ? '✅' : '❌'}</td>
-      <td><button class="btn btn-sm btn-outline-danger" onclick="delDoor('${d.door_id}')">Eliminar</button></td>
+      <td>
+        <button
+          class="btn btn-sm btn-outline-danger"
+          onclick="delDoor('${d.door_id}')">
+          Eliminar
+        </button>
+      </td>
     `;
+
     rows.appendChild(tr);
   }
 
-  const doorOptions = data.map(x => `<option value="${x.door_id}">${x.door_id} - ${x.name || ''}</option>`).join('');
 
-  const accessSel = document.getElementById('a_door');
-  if (accessSel) accessSel.innerHTML = doorOptions;
+  const doorOptions =
+    data
+      .map(
+        x =>
+          `<option value="${x.door_id}">${x.door_id} - ${x.name || ''}</option>`
+      )
+      .join('');
 
-  const devSel = document.getElementById('dev_door');
-  if (devSel) devSel.innerHTML = doorOptions;
+
+  const accessSel =
+    document.getElementById('a_door');
+
+  if (accessSel) {
+    accessSel.innerHTML = doorOptions;
+  }
+
+
+  const devSel =
+    document.getElementById('dev_door');
+
+  if (devSel) {
+    devSel.innerHTML = doorOptions;
+  }
 }
 
+
 async function createDoor() {
-  document.getElementById('door_msg').innerText = '';
+
+  const msg =
+    document.getElementById('door_msg');
+
+  msg.innerText = '';
+
+
   try {
-    await api('/api/doors', {
-      method: 'POST',
-      body: JSON.stringify({
-        door_id: document.getElementById('door_id').value.trim(),
-        name: document.getElementById('door_name').value.trim(),
-        location: document.getElementById('door_loc').value.trim(),
-        is_enabled: document.getElementById('door_enabled').checked,
-        site: "main",
-        x: 0.5,
-        y: 0.5
-      })
-    });
+
+    await api(
+      '/api/doors',
+      {
+        method: 'POST',
+
+        body: JSON.stringify({
+          door_id:
+            document
+              .getElementById('door_id')
+              .value
+              .trim(),
+
+          name:
+            document
+              .getElementById('door_name')
+              .value
+              .trim(),
+
+          location:
+            document
+              .getElementById('door_loc')
+              .value
+              .trim(),
+
+          is_enabled:
+            document
+              .getElementById('door_enabled')
+              .checked,
+
+          site: 'main',
+          x: 0.5,
+          y: 0.5
+        })
+      }
+    );
+
+
     document.getElementById('door_id').value = '';
     document.getElementById('door_name').value = '';
     document.getElementById('door_loc').value = '';
     document.getElementById('door_enabled').checked = true;
+
+
     await loadDoors();
-  } catch (e) {
-    document.getElementById('door_msg').innerText = e.message;
+
+  }
+
+  catch (e) {
+
+    msg.innerText =
+      e.message;
+
   }
 }
+
 
 async function delDoor(door_id) {
-  if (!confirm('¿Eliminar puerta ' + door_id + '?')) return;
+
+  if (!confirm(
+    '¿Eliminar puerta ' + door_id + '?'
+  )) {
+    return;
+  }
+
+
   try {
-    await api('/api/doors/' + encodeURIComponent(door_id), { method: 'DELETE' });
+
+    await api(
+      '/api/doors/' +
+      encodeURIComponent(door_id),
+      {
+        method: 'DELETE'
+      }
+    );
+
+
     await loadDoors();
     await loadDevices();
-  } catch (e) {
+
+  }
+
+  catch (e) {
+
     alert(e.message);
+
   }
 }
 
+
 /* ========================= USUARIOS NFC ========================= */
+
 async function loadUsers() {
-  const rows = document.getElementById('users_rows');
+
+  const rows =
+    document.getElementById('users_rows');
+
   rows.innerHTML = '';
 
-  const data = await api('/api/nfc-users');
+
+  const data =
+    await api('/api/nfc-users');
+
 
   for (const u of data) {
-    const safeName = String(u.full_name || '')
-      .replace(/\\/g, '\\\\')
-      .replace(/'/g, "\\'")
-      .replace(/"/g, '&quot;');
 
-    const safeEmp = String(u.employee_number || '')
-      .replace(/\\/g, '\\\\')
-      .replace(/'/g, "\\'")
-      .replace(/"/g, '&quot;');
+    const safeName =
+      String(u.full_name || '')
+        .replace(/\\/g, '\\\\')
+        .replace(/'/g, "\\'")
+        .replace(/"/g, '&quot;');
 
-    const tr = document.createElement('tr');
+
+    const safeEmp =
+      String(u.employee_number || '')
+        .replace(/\\/g, '\\\\')
+        .replace(/'/g, "\\'")
+        .replace(/"/g, '&quot;');
+
+
+    const tr =
+      document.createElement('tr');
+
+
     tr.innerHTML = `
       <td>${u.id}</td>
+
       <td>${u.full_name || ''}</td>
+
       <td>${u.employee_number || ''}</td>
+
       <td>${u.is_active ? '✅' : '❌'}</td>
+
       <td class="d-flex gap-2">
-        <button class="btn btn-sm btn-outline-secondary"
-          onclick="editUser(${u.id}, '${safeName}', '${safeEmp}', ${u.is_active})">
+
+        <button
+          class="btn btn-sm btn-outline-secondary"
+          onclick="editUser(
+            ${u.id},
+            '${safeName}',
+            '${safeEmp}',
+            ${u.is_active}
+          )">
           Editar
         </button>
-        <button class="btn btn-sm btn-outline-primary"
+
+        <button
+          class="btn btn-sm btn-outline-primary"
           onclick="openCredentialsForUser(${u.id})">
           Credenciales
         </button>
+
       </td>
     `;
+
+
     rows.appendChild(tr);
   }
 
-  const sel = document.getElementById('a_uid');
-  if (sel) {
-    sel.innerHTML = data
-      .filter(x => x.uid_hex)
-      .map(x => `<option value="${x.uid_hex}">${x.uid_hex} - ${x.full_name}</option>`)
-      .join('');
+
+  /*
+   * Selector de permisos.
+   *
+   * Conservamos el comportamiento del admin original:
+   * aquí aparecen usuarios que todavía tengan
+   * uid_hex en el modelo legacy.
+   */
+
+  const accessUidSelect =
+    document.getElementById('a_uid');
+
+
+  if (accessUidSelect) {
+
+    accessUidSelect.innerHTML =
+      data
+        .filter(x => x.uid_hex)
+        .map(
+          x =>
+            `<option value="${x.uid_hex}">
+              ${x.uid_hex} - ${x.full_name}
+            </option>`
+        )
+        .join('');
+
   }
 
-  const credSel = document.getElementById('cred_user_id');
-  if (credSel) {
-    credSel.innerHTML = data.map(
-      x => `<option value="${x.id}">${x.full_name} (${x.employee_number || 'sin empleado'})</option>`
-    ).join('');
+
+  /*
+   * Selector del lector USB Akuvox.
+   *
+   * Conservamos la selección actual para evitar
+   * que desaparezca después de guardar una tarjeta.
+   */
+
+  const akuvoxSelect =
+    document.getElementById('akuvox_user_id');
+
+
+  if (akuvoxSelect) {
+
+    const previousAkuvoxUser =
+      akuvoxSelect.value;
+
+
+    akuvoxSelect.innerHTML =
+      '<option value="">Seleccione un usuario...</option>' +
+
+      data
+        .filter(x => x.is_active)
+        .map(
+          x =>
+            `<option value="${x.id}">
+              ${x.full_name} (${x.employee_number || 'sin empleado'})
+            </option>`
+        )
+        .join('');
+
+
+    if (
+      previousAkuvoxUser &&
+      data.some(
+        x =>
+          String(x.id) ===
+          String(previousAkuvoxUser) &&
+          x.is_active
+      )
+    ) {
+
+      akuvoxSelect.value =
+        previousAkuvoxUser;
+
+    }
   }
 
-  const manageSel = document.getElementById('cred_manage_user_id');
-  if (manageSel) {
-    manageSel.innerHTML = data.map(
-      x => `<option value="${x.id}">${x.full_name} (${x.employee_number || 'sin empleado'})</option>`
-    ).join('');
+
+  /*
+   * Selector de administración de credenciales.
+   */
+
+  const manageSelect =
+    document.getElementById(
+      'cred_manage_user_id'
+    );
+
+
+  if (manageSelect) {
+
+    const previousManageUser =
+      manageSelect.value;
+
+
+    manageSelect.innerHTML =
+      data
+        .map(
+          x =>
+            `<option value="${x.id}">
+              ${x.full_name} (${x.employee_number || 'sin empleado'})
+            </option>`
+        )
+        .join('');
+
+
+    if (
+      previousManageUser &&
+      data.some(
+        x =>
+          String(x.id) ===
+          String(previousManageUser)
+      )
+    ) {
+
+      manageSelect.value =
+        previousManageUser;
+
+    }
   }
 }
 
-function editUser(userId, full_name, employee_number, is_active) {
-  document.getElementById('user_form_title').textContent = 'Editar usuario NFC';
-  document.getElementById('u_id').value = userId;
-  document.getElementById('u_name').value = full_name || '';
-  document.getElementById('u_emp').value = employee_number || '';
-  document.getElementById('u_active').checked = !!is_active;
-  document.getElementById('user_save_btn').textContent = 'Actualizar';
-  document.getElementById('user_save_btn').onclick = () => updateUser(userId);
-  document.getElementById('user_cancel_btn').style.display = 'inline-block';
+
+function editUser(
+  userId,
+  full_name,
+  employee_number,
+  is_active
+) {
+
+  document
+    .getElementById('user_form_title')
+    .textContent =
+      'Editar usuario NFC';
+
+
+  document
+    .getElementById('u_id')
+    .value =
+      userId;
+
+
+  document
+    .getElementById('u_name')
+    .value =
+      full_name || '';
+
+
+  document
+    .getElementById('u_emp')
+    .value =
+      employee_number || '';
+
+
+  document
+    .getElementById('u_active')
+    .checked =
+      !!is_active;
+
+
+  const saveButton =
+    document.getElementById(
+      'user_save_btn'
+    );
+
+
+  saveButton.textContent =
+    'Actualizar';
+
+
+  saveButton.onclick =
+    () => updateUser(userId);
+
+
+  document
+    .getElementById('user_cancel_btn')
+    .style.display =
+      'inline-block';
 }
+
 
 function resetUserForm() {
-  document.getElementById('user_form_title').textContent = 'Crear usuario NFC';
-  document.getElementById('u_id').value = '';
-  document.getElementById('u_name').value = '';
-  document.getElementById('u_emp').value = '';
-  document.getElementById('u_active').checked = true;
-  document.getElementById('user_save_btn').textContent = 'Guardar';
-  document.getElementById('user_save_btn').onclick = createUser;
-  document.getElementById('user_cancel_btn').style.display = 'none';
-  document.getElementById('user_msg').innerText = '';
+
+  document
+    .getElementById('user_form_title')
+    .textContent =
+      'Crear usuario NFC';
+
+
+  document
+    .getElementById('u_id')
+    .value = '';
+
+
+  document
+    .getElementById('u_name')
+    .value = '';
+
+
+  document
+    .getElementById('u_emp')
+    .value = '';
+
+
+  document
+    .getElementById('u_active')
+    .checked =
+      true;
+
+
+  const saveButton =
+    document.getElementById(
+      'user_save_btn'
+    );
+
+
+  saveButton.textContent =
+    'Guardar';
+
+
+  saveButton.onclick =
+    createUser;
+
+
+  document
+    .getElementById('user_cancel_btn')
+    .style.display =
+      'none';
+
+
+  document
+    .getElementById('user_msg')
+    .innerText = '';
 }
+
 
 async function updateUser(userId) {
-  document.getElementById('user_msg').innerText = '';
+
+  const msg =
+    document.getElementById(
+      'user_msg'
+    );
+
+
+  msg.innerText = '';
+
+
   try {
-    await api('/api/nfc-users/' + encodeURIComponent(userId), {
-      method: 'PUT',
-      body: JSON.stringify({
-        full_name: document.getElementById('u_name').value.trim(),
-        employee_number: document.getElementById('u_emp').value.trim(),
-        is_active: document.getElementById('u_active').checked
-      })
-    });
+
+    await api(
+      '/api/nfc-users/' +
+      encodeURIComponent(userId),
+      {
+        method: 'PUT',
+
+        body: JSON.stringify({
+
+          full_name:
+            document
+              .getElementById('u_name')
+              .value
+              .trim(),
+
+          employee_number:
+            document
+              .getElementById('u_emp')
+              .value
+              .trim(),
+
+          is_active:
+            document
+              .getElementById('u_active')
+              .checked
+        })
+      }
+    );
+
+
     resetUserForm();
+
     await loadUsers();
-  } catch (e) {
-    document.getElementById('user_msg').innerText = e.message;
+
+  }
+
+  catch (e) {
+
+    msg.innerText =
+      e.message;
+
   }
 }
+
 
 async function createUser() {
-  document.getElementById('user_msg').innerText = '';
+
+  const msg =
+    document.getElementById(
+      'user_msg'
+    );
+
+
+  msg.innerText = '';
+
+
   try {
-    await api('/api/nfc-users', {
-      method: 'POST',
-      body: JSON.stringify({
-        full_name: document.getElementById('u_name').value.trim(),
-        employee_number: document.getElementById('u_emp').value.trim(),
-        is_active: document.getElementById('u_active').checked
-      })
-    });
+
+    await api(
+      '/api/nfc-users',
+      {
+        method: 'POST',
+
+        body: JSON.stringify({
+
+          full_name:
+            document
+              .getElementById('u_name')
+              .value
+              .trim(),
+
+          employee_number:
+            document
+              .getElementById('u_emp')
+              .value
+              .trim(),
+
+          is_active:
+            document
+              .getElementById('u_active')
+              .checked
+        })
+      }
+    );
+
+
     resetUserForm();
+
     await loadUsers();
-  } catch (e) {
-    document.getElementById('user_msg').innerText = e.message;
+
+  }
+
+  catch (e) {
+
+    msg.innerText =
+      e.message;
+
   }
 }
 
+
 function openCredentialsForUser(userId) {
-  const sel = document.getElementById('cred_manage_user_id');
-  if (sel) {
-    sel.value = String(userId);
+
+  const manageSelect =
+    document.getElementById(
+      'cred_manage_user_id'
+    );
+
+
+  if (manageSelect) {
+
+    manageSelect.value =
+      String(userId);
+
   }
 
-  const tabBtn = document.querySelector('button[data-bs-target="#users"]');
-  if (tabBtn) {
-    bootstrap.Tab.getOrCreateInstance(tabBtn).show();
+
+  /*
+   * También dejamos seleccionado al mismo usuario
+   * en el nuevo enrolamiento USB.
+   */
+
+  const akuvoxSelect =
+    document.getElementById(
+      'akuvox_user_id'
+    );
+
+
+  if (akuvoxSelect) {
+
+    akuvoxSelect.value =
+      String(userId);
+
   }
+
+
+  const usersTabButton =
+    document.querySelector(
+      'button[data-bs-target="#users"]'
+    );
+
+
+  if (usersTabButton) {
+
+    bootstrap.Tab
+      .getOrCreateInstance(usersTabButton)
+      .show();
+
+  }
+
 
   loadUserCredentials();
 }
 
+
 async function loadUserCredentials() {
-  const rows = document.getElementById('user_credentials_rows');
-  const msg = document.getElementById('user_credentials_msg');
-  const sel = document.getElementById('cred_manage_user_id');
+
+  const rows =
+    document.getElementById(
+      'user_credentials_rows'
+    );
+
+
+  const msg =
+    document.getElementById(
+      'user_credentials_msg'
+    );
+
+
+  const select =
+    document.getElementById(
+      'cred_manage_user_id'
+    );
+
 
   rows.innerHTML = '';
+
+  msg.className =
+    'small text-danger mt-2';
+
   msg.textContent = '';
 
-  const userId = parseInt(sel.value || '0', 10);
+
+  const userId =
+    parseInt(
+      select.value || '0',
+      10
+    );
+
+
   if (!userId) {
-    msg.textContent = 'Selecciona un usuario.';
+
+    msg.textContent =
+      'Selecciona un usuario.';
+
     return;
   }
 
+
   try {
-    const data = await api('/api/nfc-credentials/by-user/' + encodeURIComponent(userId));
+
+    const data =
+      await api(
+        '/api/nfc-credentials/by-user/' +
+        encodeURIComponent(userId)
+      );
+
 
     if (!data.length) {
-      msg.textContent = 'Este usuario no tiene credenciales registradas.';
+
+      msg.className =
+        'small text-muted mt-2';
+
+      msg.textContent =
+        'Este usuario no tiene credenciales registradas.';
+
       return;
     }
 
-    for (const c of data) {
-      const tr = document.createElement('tr');
+
+    for (const credential of data) {
+
+      const tr =
+        document.createElement('tr');
+
+
       tr.innerHTML = `
-        <td>${c.id}</td>
-        <td><code>${c.uid_hex}</code></td>
-        <td>${c.tag_type || ''}</td>
-        <td>${c.is_active ? '✅' : '❌'}</td>
+        <td>${credential.id}</td>
+
         <td>
-          <button class="btn btn-sm btn-outline-danger" onclick="deleteCredential(${c.id})">
+          <code>${credential.uid_hex}</code>
+        </td>
+
+        <td>${credential.tag_type || ''}</td>
+
+        <td>
+          ${credential.is_active ? '✅' : '❌'}
+        </td>
+
+        <td>
+
+          <button
+            class="btn btn-sm btn-outline-danger"
+            onclick="deleteCredential(${credential.id})">
             Eliminar
           </button>
+
         </td>
       `;
+
+
       rows.appendChild(tr);
     }
-  } catch (e) {
-    msg.textContent = e.message;
+
+  }
+
+  catch (e) {
+
+    msg.className =
+      'small text-danger mt-2';
+
+    msg.textContent =
+      e.message;
+
   }
 }
+
 
 async function deleteCredential(credentialId) {
-  if (!confirm('¿Eliminar esta credencial?')) return;
 
-  const msg = document.getElementById('user_credentials_msg');
+  if (!confirm(
+    '¿Eliminar esta credencial?'
+  )) {
+    return;
+  }
+
+
+  const msg =
+    document.getElementById(
+      'user_credentials_msg'
+    );
+
 
   try {
-    await api('/api/nfc-credentials/' + encodeURIComponent(credentialId), {
-      method: 'DELETE'
-    });
 
-    msg.className = 'small text-success mt-2';
-    msg.textContent = '✅ Credencial eliminada. Ya puedes enrolar una nueva.';
+    await api(
+      '/api/nfc-credentials/' +
+      encodeURIComponent(credentialId),
+      {
+        method: 'DELETE'
+      }
+    );
+
+
+    msg.className =
+      'small text-success mt-2';
+
+
+    msg.textContent =
+      '✅ Credencial eliminada. Ya puedes enrolar una nueva.';
+
+
     await loadUserCredentials();
+
     await loadUsers();
+
     await loadAccessMatrix();
-  } catch (e) {
-    msg.className = 'small text-danger mt-2';
-    msg.textContent = e.message;
+
+  }
+
+  catch (e) {
+
+    msg.className =
+      'small text-danger mt-2';
+
+
+    msg.textContent =
+      e.message;
+
   }
 }
+
 
 /* ========================= PERMISOS ========================= */
+
 async function loadAccessMatrix() {
-  const tbody = document.getElementById('access_rows');
+
+  const tbody =
+    document.getElementById(
+      'access_rows'
+    );
+
+
+  const msg =
+    document.getElementById(
+      'access_msg'
+    );
+
+
   tbody.innerHTML = '';
-  const msg = document.getElementById('access_msg');
+
   msg.textContent = '';
 
+
   try {
-    const data = await api('/api/door-access');
-    for (const r of data) {
-      const uid = r.uid_hex || r.uid || '';
-      const tr = document.createElement('tr');
+
+    const data =
+      await api(
+        '/api/door-access'
+      );
+
+
+    for (const access of data) {
+
+      const uid =
+        access.uid_hex ||
+        access.uid ||
+        '';
+
+
+      const tr =
+        document.createElement('tr');
+
+
       tr.innerHTML = `
-        <td><code>${r.door_id}</code></td>
-        <td><code>${uid}</code></td>
-        <td>${r.full_name}</td>
-        <td><span class="badge ${r.is_allowed ? 'bg-success' : 'bg-danger'}">${r.is_allowed ? 'Permitido' : 'Denegado'}</span></td>
-        <td><button class="btn btn-sm btn-outline-warning" onclick="toggleAccess('${r.door_id}','${uid}')">Toggle</button></td>
-      `;
-      tbody.appendChild(tr);
-    }
-    if (!data.length) msg.textContent = 'Sin permisos asignados aún.';
-  } catch (e) {
-    msg.textContent = 'Error: ' + e.message;
-  }
-}
+        <td>
+          <code>${access.door_id}</code>
+        </td>
 
-async function toggleAccess(door_id, uid_hex) {
-  try {
-    await api('/api/door-access/toggle', {
-      method: 'POST',
-      body: JSON.stringify({ door_id, uid_hex, is_allowed: true })
-    });
-    await loadAccessMatrix();
-  } catch (e) {
-    alert(e.message);
-  }
-}
+        <td>
+          <code>${uid}</code>
+        </td>
 
-async function setAccess() {
-  const msg = document.getElementById('acc_msg');
-  msg.className = 'small mt-2';
-  msg.innerText = '';
+        <td>
+          ${access.full_name || ''}
+        </td>
 
-  try {
-    await api('/api/door-access/set', {
-      method: 'POST',
-      body: JSON.stringify({
-        door_id: document.getElementById('a_door').value,
-        uid_hex: document.getElementById('a_uid').value,
-        is_allowed: document.getElementById('a_allowed').checked
-      })
-    });
-    msg.className = 'small mt-2 text-success';
-    msg.innerText = '✅ Guardado';
-    setTimeout(() => { msg.innerText = ''; }, 1500);
-    await loadAccessMatrix();
-  } catch (e) {
-    msg.className = 'small mt-2 text-danger';
-    msg.innerText = e.message;
-  }
-}
+        <td>
 
-/* ========================= DISPOSITIVOS ESP32 ========================= */
-async function loadDevices() {
-  const rows = document.getElementById('devices_rows');
-  const msg = document.getElementById('devices_msg');
-  rows.innerHTML = '';
-  msg.textContent = '';
+          <span
+            class="badge ${
+              access.is_allowed
+                ? 'bg-success'
+                : 'bg-danger'
+            }">
 
-  try {
-    const data = await api('/api/device-keys');
+            ${
+              access.is_allowed
+                ? 'Permitido'
+                : 'Denegado'
+            }
 
-    for (const d of data) {
-      const tr = document.createElement('tr');
-      tr.innerHTML = `
-        <td><code>${d.door_id}</code></td>
-        <td>${d.description || ''}</td>
-        <td>${d.is_active ? '✅' : '❌'}</td>
-        <td>${fmtTs(d.last_seen)}</td>
-        <td class="d-flex gap-2">
-          <button class="btn btn-sm btn-outline-warning" onclick="toggleDevice('${d.door_id}')">Toggle</button>
-          <button class="btn btn-sm btn-outline-danger" onclick="deleteDevice('${d.door_id}')">Eliminar</button>
+          </span>
+
+        </td>
+
+        <td>
+
+          <button
+            class="btn btn-sm btn-outline-warning"
+            onclick="toggleAccess(
+              '${access.door_id}',
+              '${uid}'
+            )">
+            Toggle
+          </button>
+
         </td>
       `;
+
+
+      tbody.appendChild(tr);
+    }
+
+
+    if (!data.length) {
+
+      msg.textContent =
+        'Sin permisos asignados aún.';
+
+    }
+
+  }
+
+  catch (e) {
+
+    msg.textContent =
+      'Error: ' + e.message;
+
+  }
+}
+
+
+async function toggleAccess(
+  door_id,
+  uid_hex
+) {
+
+  try {
+
+    await api(
+      '/api/door-access/toggle',
+      {
+        method: 'POST',
+
+        body: JSON.stringify({
+          door_id,
+          uid_hex,
+          is_allowed: true
+        })
+      }
+    );
+
+
+    await loadAccessMatrix();
+
+  }
+
+  catch (e) {
+
+    alert(e.message);
+
+  }
+}
+
+
+async function setAccess() {
+
+  const msg =
+    document.getElementById(
+      'acc_msg'
+    );
+
+
+  msg.className =
+    'small mt-2';
+
+  msg.innerText = '';
+
+
+  try {
+
+    const doorId =
+      document
+        .getElementById('a_door')
+        .value;
+
+
+    const uid =
+      document
+        .getElementById('a_uid')
+        .value;
+
+
+    if (!doorId) {
+
+      throw new Error(
+        'Selecciona una puerta.'
+      );
+
+    }
+
+
+    if (!uid) {
+
+      throw new Error(
+        'Selecciona un usuario/UID.'
+      );
+
+    }
+
+
+    await api(
+      '/api/door-access/set',
+      {
+        method: 'POST',
+
+        body: JSON.stringify({
+
+          door_id:
+            doorId,
+
+          uid_hex:
+            uid,
+
+          is_allowed:
+            document
+              .getElementById('a_allowed')
+              .checked
+        })
+      }
+    );
+
+
+    msg.className =
+      'small mt-2 text-success';
+
+
+    msg.innerText =
+      '✅ Guardado';
+
+
+    setTimeout(
+      () => {
+        msg.innerText = '';
+      },
+      1500
+    );
+
+
+    await loadAccessMatrix();
+
+  }
+
+  catch (e) {
+
+    msg.className =
+      'small mt-2 text-danger';
+
+
+    msg.innerText =
+      e.message;
+
+  }
+}
+
+
+/* ========================= DISPOSITIVOS ESP32 ========================= */
+
+async function loadDevices() {
+
+  const rows =
+    document.getElementById(
+      'devices_rows'
+    );
+
+
+  const msg =
+    document.getElementById(
+      'devices_msg'
+    );
+
+
+  rows.innerHTML = '';
+
+  msg.textContent = '';
+
+
+  try {
+
+    const data =
+      await api(
+        '/api/device-keys'
+      );
+
+
+    for (const device of data) {
+
+      const tr =
+        document.createElement('tr');
+
+
+      tr.innerHTML = `
+        <td>
+          <code>${device.door_id}</code>
+        </td>
+
+        <td>
+          ${device.description || ''}
+        </td>
+
+        <td>
+          ${device.is_active ? '✅' : '❌'}
+        </td>
+
+        <td>
+          ${fmtTs(device.last_seen)}
+        </td>
+
+        <td class="d-flex gap-2">
+
+          <button
+            class="btn btn-sm btn-outline-warning"
+            onclick="toggleDevice('${device.door_id}')">
+            Toggle
+          </button>
+
+          <button
+            class="btn btn-sm btn-outline-danger"
+            onclick="deleteDevice('${device.door_id}')">
+            Eliminar
+          </button>
+
+        </td>
+      `;
+
+
       rows.appendChild(tr);
     }
 
+
     if (!data.length) {
-      msg.textContent = 'Sin dispositivos registrados aún.';
+
+      msg.textContent =
+        'Sin dispositivos registrados aún.';
+
     }
-  } catch (e) {
-    msg.textContent = 'Error: ' + e.message;
+
+  }
+
+  catch (e) {
+
+    msg.textContent =
+      'Error: ' + e.message;
+
   }
 }
+
 
 async function createDevice() {
-  const msg = document.getElementById('dev_msg');
-  msg.className = 'small mt-2';
+
+  const msg =
+    document.getElementById(
+      'dev_msg'
+    );
+
+
+  msg.className =
+    'small mt-2';
+
   msg.innerText = '';
 
+
   try {
-    const door_id = document.getElementById('dev_door').value;
-    const raw_key = document.getElementById('dev_key').value.trim();
-    const description = document.getElementById('dev_desc').value.trim();
+
+    const door_id =
+      document
+        .getElementById('dev_door')
+        .value;
+
+
+    const raw_key =
+      document
+        .getElementById('dev_key')
+        .value
+        .trim();
+
+
+    const description =
+      document
+        .getElementById('dev_desc')
+        .value
+        .trim();
+
 
     if (!door_id) {
-      msg.className = 'small mt-2 text-danger';
-      msg.innerText = 'Selecciona una puerta.';
+
+      msg.className =
+        'small mt-2 text-danger';
+
+
+      msg.innerText =
+        'Selecciona una puerta.';
+
+
       return;
     }
+
 
     if (!raw_key) {
-      msg.className = 'small mt-2 text-danger';
-      msg.innerText = 'La clave es obligatoria.';
+
+      msg.className =
+        'small mt-2 text-danger';
+
+
+      msg.innerText =
+        'La clave es obligatoria.';
+
+
       return;
     }
 
-    await api('/api/device-keys', {
-      method: 'POST',
-      body: JSON.stringify({ door_id, raw_key, description })
-    });
 
-    document.getElementById('dev_key').value = '';
-    document.getElementById('dev_desc').value = '';
+    await api(
+      '/api/device-keys',
+      {
+        method: 'POST',
 
-    msg.className = 'small mt-2 text-success';
-    msg.innerText = '✅ Dispositivo registrado';
+        body: JSON.stringify({
+          door_id,
+          raw_key,
+          description
+        })
+      }
+    );
+
+
+    document
+      .getElementById('dev_key')
+      .value = '';
+
+
+    document
+      .getElementById('dev_desc')
+      .value = '';
+
+
+    msg.className =
+      'small mt-2 text-success';
+
+
+    msg.innerText =
+      '✅ Dispositivo registrado';
+
 
     await loadDevices();
-  } catch (e) {
-    msg.className = 'small mt-2 text-danger';
-    msg.innerText = e.message;
+
+  }
+
+  catch (e) {
+
+    msg.className =
+      'small mt-2 text-danger';
+
+
+    msg.innerText =
+      e.message;
+
   }
 }
+
 
 async function deleteDevice(door_id) {
-  if (!confirm('¿Eliminar dispositivo de ' + door_id + '?')) return;
+
+  if (!confirm(
+    '¿Eliminar dispositivo de ' +
+    door_id +
+    '?'
+  )) {
+    return;
+  }
+
 
   try {
-    await api('/api/device-keys/' + encodeURIComponent(door_id), {
-      method: 'DELETE'
-    });
+
+    await api(
+      '/api/device-keys/' +
+      encodeURIComponent(door_id),
+      {
+        method: 'DELETE'
+      }
+    );
+
+
     await loadDevices();
-  } catch (e) {
+
+  }
+
+  catch (e) {
+
     alert(e.message);
+
   }
 }
+
 
 async function toggleDevice(door_id) {
+
   try {
-    await api('/api/device-keys/' + encodeURIComponent(door_id) + '/toggle', {
-      method: 'POST'
-    });
+
+    await api(
+      '/api/device-keys/' +
+      encodeURIComponent(door_id) +
+      '/toggle',
+      {
+        method: 'POST'
+      }
+    );
+
+
     await loadDevices();
-  } catch (e) {
+
+  }
+
+  catch (e) {
+
     alert(e.message);
+
   }
 }
 
-/* ========================= ENROLAMIENTO ========================= */
-function clearEnrollmentFields(keepMessages = false) {
-  currentEnrollmentSessionId = null;
+/* ========================= ENROLAMIENTO AKUVOX USB ========================= */
 
-  document.getElementById('en_session_id').value = '';
-  document.getElementById('en_status').value = '';
-  document.getElementById('en_uid').value = '';
-  document.getElementById('en_created').value = '';
-  document.getElementById('en_read_at').value = '';
-  document.getElementById('cred_tag_type').value = 'tag';
 
-  if (!keepMessages) {
-    document.getElementById('enroll_status_msg').innerText = '';
-    document.getElementById('cred_msg').innerText = '';
+/*
+ * NORMALIZACIÓN AKUVOX -> HIKVISION W34
+ *
+ * Regla comprobada físicamente con nuestro hardware:
+ *
+ * Akuvox USB:
+ *   AA BB CC DD [...]
+ *
+ * Hikvision W34:
+ *   DD CC BB AA
+ *
+ * Algunas credenciales entregan más de 8 caracteres
+ * desde el Akuvox.
+ *
+ * Para SigControl:
+ *
+ * 1. Eliminamos cualquier carácter que no sea HEX.
+ * 2. Tomamos los primeros 8 caracteres = 4 bytes.
+ * 3. Invertimos el orden de los bytes.
+ * 4. Guardamos el resultado en mayúsculas.
+ */
+
+function normalizeAkuvoxUid(rawValue) {
+
+  const clean =
+    String(rawValue || '')
+      .toUpperCase()
+      .replace(/[^0-9A-F]/g, '');
+
+
+  if (clean.length < 8) {
+
+    throw new Error(
+      'La lectura recibida es demasiado corta.'
+    );
+
   }
-}
 
-function stopEnrollmentPolling() {
-  if (enrollmentPollTimer) {
-    clearInterval(enrollmentPollTimer);
-    enrollmentPollTimer = null;
+
+  const firstFourBytes =
+    clean.substring(0, 8);
+
+
+  const bytes =
+    firstFourBytes.match(/.{2}/g);
+
+
+  if (!bytes || bytes.length !== 4) {
+
+    throw new Error(
+      'No fue posible interpretar la credencial.'
+    );
+
   }
-}
 
-function startEnrollmentPolling() {
-  stopEnrollmentPolling();
-  enrollmentPollTimer = setInterval(async () => {
-    if (!currentEnrollmentSessionId) {
-      stopEnrollmentPolling();
-      return;
-    }
-    await refreshEnrollment(true);
-  }, 1200);
-}
 
-async function loadEnrollmentStations() {
-  const msg = document.getElementById('station_msg');
-  try {
-    const data = await api('/api/enrollment-station-keys');
-    savedStations = Array.isArray(data) ? data : [];
+  const normalized =
+    bytes
+      .reverse()
+      .join('');
 
-    const options = savedStations.length
-      ? savedStations.map(s => `<option value="${s.station_name}">${s.station_name}${s.description ? ' — ' + s.description : ''}</option>`).join('')
-      : `<option value="">Sin estaciones guardadas</option>`;
 
-    document.getElementById('st_saved_sel').innerHTML = options;
-    document.getElementById('en_station_sel').innerHTML = options;
+  if (!/^[0-9A-F]{8}$/.test(normalized)) {
 
-    if (savedStations.length) {
-      const first = savedStations[0];
-      document.getElementById('st_saved_sel').value = first.station_name;
-      document.getElementById('en_station_sel').value = first.station_name;
-      applySelectedStationToForms();
-    }
-  } catch (e) {
-    msg.className = 'small mt-2 text-danger';
-    msg.innerText = e.message;
+    throw new Error(
+      'El UID generado no tiene un formato válido.'
+    );
+
   }
+
+
+  return normalized;
 }
 
-function applySelectedStationToForms() {
-  const selectedName =
-    document.getElementById('en_station_sel').value ||
-    document.getElementById('st_saved_sel').value ||
+
+
+/* ========================================================= */
+/* ESTADO VISUAL DEL LECTOR                                  */
+/* ========================================================= */
+
+function setAkuvoxStatus(type, text) {
+
+  const badge =
+    document.getElementById(
+      'akuvox_status_badge'
+    );
+
+
+  const statusText =
+    document.getElementById(
+      'akuvox_status_text'
+    );
+
+
+  const readerBadge =
+    document.getElementById(
+      'akuvox_reader_badge'
+    );
+
+
+  if (
+    !badge ||
+    !statusText ||
+    !readerBadge
+  ) {
+
+    return;
+
+  }
+
+
+  switch (type) {
+
+    case 'waiting':
+
+      badge.className =
+        'badge bg-warning text-dark';
+
+      badge.textContent =
+        'Esperando';
+
+
+      readerBadge.className =
+        'badge bg-warning text-dark';
+
+      readerBadge.textContent =
+        'LEYENDO';
+
+      break;
+
+
+    case 'success':
+
+      badge.className =
+        'badge bg-success';
+
+      badge.textContent =
+        'Detectada';
+
+
+      readerBadge.className =
+        'badge bg-success';
+
+      readerBadge.textContent =
+        'CREDENCIAL LEÍDA';
+
+      break;
+
+
+    case 'error':
+
+      badge.className =
+        'badge bg-danger';
+
+      badge.textContent =
+        'Error';
+
+
+      readerBadge.className =
+        'badge bg-danger';
+
+      readerBadge.textContent =
+        'ERROR';
+
+      break;
+
+
+    default:
+
+      badge.className =
+        'badge bg-secondary';
+
+      badge.textContent =
+        'En espera';
+
+
+      readerBadge.className =
+        'badge bg-secondary';
+
+      readerBadge.textContent =
+        'INACTIVO';
+
+      break;
+
+  }
+
+
+  statusText.textContent =
+    text || '';
+
+}
+
+
+
+/* ========================================================= */
+/* INICIAR LECTURA                                           */
+/* ========================================================= */
+
+function startAkuvoxEnrollment() {
+
+  const userSelect =
+    document.getElementById(
+      'akuvox_user_id'
+    );
+
+
+  const msg =
+    document.getElementById(
+      'akuvox_msg'
+    );
+
+
+  msg.className =
+    'small mt-3';
+
+  msg.textContent =
     '';
 
-  if (!selectedName) return;
 
-  const st = savedStations.find(x => x.station_name === selectedName);
-  if (!st) return;
+  /*
+   * No permitimos leer una credencial sin saber
+   * primero a qué usuario será asignada.
+   */
 
-  document.getElementById('st_saved_sel').value = st.station_name;
-  document.getElementById('en_station_sel').value = st.station_name;
-  document.getElementById('st_name').value = st.station_name || '';
-  document.getElementById('en_station_name').value = st.station_name || '';
-  document.getElementById('st_desc').value = st.description || '';
+  if (
+    !userSelect ||
+    !userSelect.value
+  ) {
+
+    msg.className =
+      'small mt-3 text-danger';
+
+
+    msg.textContent =
+      'Selecciona primero un usuario NFC.';
+
+
+    return;
+
+  }
+
+
+  /*
+   * Reiniciamos el estado de la lectura.
+   */
+
+  akuvoxEnrollmentActive =
+    true;
+
+
+  akuvoxLastRaw =
+    '';
+
+
+  akuvoxLastUid =
+    '';
+
+
+  if (akuvoxInputTimer) {
+
+    clearTimeout(
+      akuvoxInputTimer
+    );
+
+
+    akuvoxInputTimer =
+      null;
+
+  }
+
+
+  const input =
+    document.getElementById(
+      'akuvox_raw_input'
+    );
+
+
+  input.value =
+    '';
+
+
+  document
+    .getElementById('akuvox_raw_display')
+    .value =
+      '';
+
+
+  document
+    .getElementById('akuvox_uid')
+    .value =
+      '';
+
+
+  document
+    .getElementById('akuvox_debug_raw')
+    .textContent =
+      '—';
+
+
+  document
+    .getElementById('akuvox_debug_uid')
+    .textContent =
+      '—';
+
+
+  /*
+   * Ocultamos un posible resultado anterior.
+   */
+
+  document
+    .getElementById('akuvox_saved_panel')
+    .style.display =
+      'none';
+
+
+  document
+    .getElementById('akuvox_result')
+    .style.display =
+      'none';
+
+
+  /*
+   * Mostramos la zona de captura.
+   */
+
+  document
+    .getElementById('akuvox_idle_panel')
+    .style.display =
+      'none';
+
+
+  document
+    .getElementById('akuvox_reader_panel')
+    .style.display =
+      'block';
+
+
+  document
+    .getElementById('akuvox_waiting')
+    .style.display =
+      'block';
+
+
+  document
+    .getElementById('akuvox_start_btn')
+    .style.display =
+      'none';
+
+
+  document
+    .getElementById('akuvox_cancel_btn')
+    .style.display =
+      'block';
+
+
+  document
+    .getElementById('akuvox_reader_message')
+    .textContent =
+      'Acerque la credencial al lector';
+
+
+  setAkuvoxStatus(
+    'waiting',
+    'Esperando una credencial...'
+  );
+
+
+  /*
+   * MUY IMPORTANTE:
+   *
+   * El Akuvox ACR-CID01 funciona como teclado USB HID.
+   * Por eso necesitamos mantener el foco en este input.
+   */
+
+  setTimeout(
+    () => {
+
+      input.focus();
+
+    },
+    100
+  );
+
 }
 
-async function createStationKey() {
-  const msg = document.getElementById('station_msg');
-  msg.className = 'small mt-2';
-  msg.innerText = '';
+
+
+/* ========================================================= */
+/* CANCELAR LECTURA                                          */
+/* ========================================================= */
+
+function cancelAkuvoxEnrollment() {
+
+  akuvoxEnrollmentActive =
+    false;
+
+
+  akuvoxLastRaw =
+    '';
+
+
+  akuvoxLastUid =
+    '';
+
+
+  if (akuvoxInputTimer) {
+
+    clearTimeout(
+      akuvoxInputTimer
+    );
+
+
+    akuvoxInputTimer =
+      null;
+
+  }
+
+
+  const input =
+    document.getElementById(
+      'akuvox_raw_input'
+    );
+
+
+  if (input) {
+
+    input.value =
+      '';
+
+
+    input.blur();
+
+  }
+
+
+  document
+    .getElementById('akuvox_reader_panel')
+    .style.display =
+      'none';
+
+
+  document
+    .getElementById('akuvox_idle_panel')
+    .style.display =
+      'block';
+
+
+  document
+    .getElementById('akuvox_result')
+    .style.display =
+      'none';
+
+
+  document
+    .getElementById('akuvox_start_btn')
+    .style.display =
+      'block';
+
+
+  document
+    .getElementById('akuvox_cancel_btn')
+    .style.display =
+      'none';
+
+
+  setAkuvoxStatus(
+    'idle',
+    'Inicie una lectura.'
+  );
+
+}
+
+
+
+/* ========================================================= */
+/* REPETIR LECTURA                                           */
+/* ========================================================= */
+
+function retryAkuvoxEnrollment() {
+
+  akuvoxEnrollmentActive =
+    true;
+
+
+  akuvoxLastRaw =
+    '';
+
+
+  akuvoxLastUid =
+    '';
+
+
+  if (akuvoxInputTimer) {
+
+    clearTimeout(
+      akuvoxInputTimer
+    );
+
+
+    akuvoxInputTimer =
+      null;
+
+  }
+
+
+  const input =
+    document.getElementById(
+      'akuvox_raw_input'
+    );
+
+
+  input.value =
+    '';
+
+
+  document
+    .getElementById('akuvox_raw_display')
+    .value =
+      '';
+
+
+  document
+    .getElementById('akuvox_uid')
+    .value =
+      '';
+
+
+  document
+    .getElementById('akuvox_debug_raw')
+    .textContent =
+      '—';
+
+
+  document
+    .getElementById('akuvox_debug_uid')
+    .textContent =
+      '—';
+
+
+  document
+    .getElementById('akuvox_result')
+    .style.display =
+      'none';
+
+
+  document
+    .getElementById('akuvox_waiting')
+    .style.display =
+      'block';
+
+
+  document
+    .getElementById('akuvox_reader_message')
+    .textContent =
+      'Acerque la credencial al lector';
+
+
+  setAkuvoxStatus(
+    'waiting',
+    'Esperando una nueva lectura...'
+  );
+
+
+  setTimeout(
+    () => {
+
+      input.focus();
+
+    },
+    100
+  );
+
+}
+
+
+
+/* ========================================================= */
+/* CAPTURA HID                                               */
+/* ========================================================= */
+
+function handleAkuvoxInput() {
+
+  if (!akuvoxEnrollmentActive) {
+
+    return;
+
+  }
+
+
+  if (akuvoxInputTimer) {
+
+    clearTimeout(
+      akuvoxInputTimer
+    );
+
+  }
+
+
+  /*
+   * No procesamos al llegar a 8 caracteres.
+   *
+   * Esto es intencional.
+   *
+   * Algunas de nuestras credenciales producen:
+   *
+   * 117D0C07
+   *
+   * mientras otras producen:
+   *
+   * 1DAF64630D1080
+   *
+   * Por eso esperamos 220 ms desde el último carácter
+   * recibido para asumir que el lector terminó.
+   */
+
+  akuvoxInputTimer =
+    setTimeout(
+      () => {
+
+        processAkuvoxReading();
+
+      },
+      220
+    );
+
+}
+
+
+
+/* ========================================================= */
+/* ENTER DEL LECTOR                                          */
+/* ========================================================= */
+
+function handleAkuvoxKeydown(event) {
+
+  if (!akuvoxEnrollmentActive) {
+
+    return;
+
+  }
+
+
+  /*
+   * Algunos lectores HID envían Enter después
+   * del código.
+   *
+   * Si el Akuvox lo hace, procesamos inmediatamente.
+   */
+
+  if (event.key === 'Enter') {
+
+    event.preventDefault();
+
+
+    if (akuvoxInputTimer) {
+
+      clearTimeout(
+        akuvoxInputTimer
+      );
+
+
+      akuvoxInputTimer =
+        null;
+
+    }
+
+
+    processAkuvoxReading();
+
+  }
+
+}
+
+
+
+/* ========================================================= */
+/* PROCESAR CREDENCIAL                                       */
+/* ========================================================= */
+
+function processAkuvoxReading() {
+
+  if (!akuvoxEnrollmentActive) {
+
+    return;
+
+  }
+
+
+  const input =
+    document.getElementById(
+      'akuvox_raw_input'
+    );
+
+
+  /*
+   * Conservamos solamente caracteres HEX.
+   */
+
+  const raw =
+    String(input.value || '')
+      .trim()
+      .toUpperCase()
+      .replace(/[^0-9A-F]/g, '');
+
+
+  /*
+   * Cuatro bytes = 8 caracteres HEX.
+   *
+   * Si todavía no llegaron todos, simplemente
+   * seguimos esperando.
+   */
+
+  if (raw.length < 8) {
+
+    return;
+
+  }
+
 
   try {
-    const station_name = document.getElementById('st_name').value.trim();
-    const raw_key = document.getElementById('st_key').value.trim();
-    const description = document.getElementById('st_desc').value.trim();
 
-    if (!station_name || !raw_key) {
-      msg.className = 'small mt-2 text-danger';
-      msg.innerText = 'Station name y clave son obligatorios.';
-      return;
-    }
+    const normalized =
+      normalizeAkuvoxUid(raw);
 
-    await api('/api/enrollment-station-keys', {
-      method: 'POST',
-      body: JSON.stringify({ station_name, raw_key, description })
-    });
 
-    msg.className = 'small mt-2 text-success';
-    msg.innerText = '✅ Estación guardada';
+    akuvoxLastRaw =
+      raw;
 
-    document.getElementById('st_key').value = '';
-    await loadEnrollmentStations();
 
-    document.getElementById('st_saved_sel').value = station_name;
-    document.getElementById('en_station_sel').value = station_name;
-    applySelectedStationToForms();
-  } catch (e) {
-    msg.className = 'small mt-2 text-danger';
-    msg.innerText = e.message;
+    akuvoxLastUid =
+      normalized;
+
+
+    /*
+     * Mostramos ambos valores.
+     */
+
+    document
+      .getElementById('akuvox_raw_display')
+      .value =
+        raw;
+
+
+    document
+      .getElementById('akuvox_uid')
+      .value =
+        normalized;
+
+
+    document
+      .getElementById('akuvox_debug_raw')
+      .textContent =
+        raw;
+
+
+    document
+      .getElementById('akuvox_debug_uid')
+      .textContent =
+        normalized;
+
+
+    document
+      .getElementById('akuvox_waiting')
+      .style.display =
+        'none';
+
+
+    document
+      .getElementById('akuvox_result')
+      .style.display =
+        'block';
+
+
+    document
+      .getElementById('akuvox_reader_message')
+      .textContent =
+        'Credencial detectada';
+
+
+    /*
+     * Bloqueamos temporalmente nuevas lecturas.
+     *
+     * Esto evita que una segunda tarjeta presentada
+     * accidentalmente reemplace la primera antes de
+     * que el administrador confirme la asignación.
+     */
+
+    akuvoxEnrollmentActive =
+      false;
+
+
+    setAkuvoxStatus(
+      'success',
+      'Credencial detectada correctamente.'
+    );
+
+
+    input.blur();
+
   }
+
+  catch (e) {
+
+    const msg =
+      document.getElementById(
+        'akuvox_msg'
+      );
+
+
+    msg.className =
+      'small mt-3 text-danger';
+
+
+    msg.textContent =
+      e.message;
+
+
+    setAkuvoxStatus(
+      'error',
+      e.message
+    );
+
+  }
+
 }
 
-async function startEnrollment() {
-  const msg = document.getElementById('enroll_msg');
-  msg.className = 'small mt-2';
-  msg.innerText = '';
+
+
+/* ========================================================= */
+/* GUARDAR CREDENCIAL                                        */
+/* ========================================================= */
+
+async function saveAkuvoxCredential() {
+
+  const msg =
+    document.getElementById(
+      'akuvox_msg'
+    );
+
+
+  const saveButton =
+    document.getElementById(
+      'akuvox_save_btn'
+    );
+
+
+  msg.className =
+    'small mt-3';
+
+
+  msg.textContent =
+    '';
+
 
   try {
-    clearEnrollmentFields(true);
 
-    const station_name = document.getElementById('en_station_name').value.trim() || 'main';
-    const tag_type = document.getElementById('en_tag_type').value;
+    /*
+     * Usuario seleccionado.
+     */
 
-    const data = await api('/api/enrollment/start', {
-      method: 'POST',
-      body: JSON.stringify({ station_name, tag_type })
-    });
+    const nfc_user_id =
+      parseInt(
+        document
+          .getElementById('akuvox_user_id')
+          .value,
+        10
+      );
 
-    currentEnrollmentSessionId = data.id;
-    fillEnrollmentSession(data);
 
-    msg.className = 'small mt-2 text-success';
-    msg.innerText = '✅ Sesión iniciada. Esperando lectura del tag...';
+    /*
+     * Tipo físico.
+     */
 
-    startEnrollmentPolling();
-  } catch (e) {
-    msg.className = 'small mt-2 text-danger';
-    msg.innerText = e.message;
-  }
-}
+    const tag_type =
+      document
+        .getElementById('akuvox_tag_type')
+        .value;
 
-async function refreshEnrollment(silent = false) {
-  const msg = document.getElementById('enroll_status_msg');
-  if (!silent) {
-    msg.className = 'small mt-2';
-    msg.innerText = '';
-  }
 
-  try {
-    const sessionId = currentEnrollmentSessionId || document.getElementById('en_session_id').value;
-    if (!sessionId) {
-      if (!silent) {
-        msg.className = 'small mt-2 text-danger';
-        msg.innerText = 'No hay sesión activa.';
-      }
-      return;
+    /*
+     * UID YA NORMALIZADO.
+     *
+     * Este es el valor que verá el Hikvision/KC868,
+     * no la cadena original entregada por Akuvox.
+     */
+
+    const uid_hex =
+      akuvoxLastUid;
+
+
+    if (!nfc_user_id) {
+
+      throw new Error(
+        'Selecciona un usuario NFC.'
+      );
+
     }
 
-    const data = await api('/api/enrollment/' + encodeURIComponent(sessionId));
-    currentEnrollmentSessionId = data.id;
-    fillEnrollmentSession(data);
 
-    if (data.status === 'read') {
-      msg.className = 'small mt-2 text-success';
-      msg.innerText = '✅ Tag leído correctamente.';
-      stopEnrollmentPolling();
-    } else if (data.status === 'consumed') {
-      msg.className = 'small mt-2 text-success';
-      msg.innerText = '✅ Sesión consumida.';
-      stopEnrollmentPolling();
-    } else if (!silent) {
-      msg.className = 'small mt-2 text-muted';
-      msg.innerText = 'Estado actualizado.';
-    }
-  } catch (e) {
-    stopEnrollmentPolling();
-    msg.className = 'small mt-2 text-danger';
-    msg.innerText = e.message;
-  }
-}
+    if (
+      !uid_hex ||
+      !/^[0-9A-F]{8}$/.test(uid_hex)
+    ) {
 
-async function consumeEnrollment() {
-  const msg = document.getElementById('enroll_status_msg');
-  msg.className = 'small mt-2';
-  msg.innerText = '';
+      throw new Error(
+        'No hay una credencial válida para guardar.'
+      );
 
-  try {
-    const sessionId = currentEnrollmentSessionId || document.getElementById('en_session_id').value;
-    if (!sessionId) {
-      msg.className = 'small mt-2 text-danger';
-      msg.innerText = 'No hay sesión activa.';
-      return;
     }
 
-    const data = await api('/api/enrollment/' + encodeURIComponent(sessionId) + '/consume', {
-      method: 'POST'
-    });
 
-    fillEnrollmentSession(data);
-    stopEnrollmentPolling();
+    /*
+     * Evitamos doble clic.
+     */
 
-    msg.className = 'small mt-2 text-success';
-    msg.innerText = '✅ Sesión consumida.';
-  } catch (e) {
-    msg.className = 'small mt-2 text-danger';
-    msg.innerText = e.message;
-  }
-}
+    saveButton.disabled =
+      true;
 
-function fillEnrollmentSession(data) {
-  document.getElementById('en_session_id').value = data.id || '';
-  document.getElementById('en_status').value = data.status || '';
-  document.getElementById('en_uid').value = data.uid_hex || '';
-  document.getElementById('en_created').value = fmtTs(data.created_at);
-  document.getElementById('en_read_at').value = fmtTs(data.read_at);
 
-  if (data.tag_type) {
-    document.getElementById('cred_tag_type').value = data.tag_type;
-  }
-}
+    saveButton.textContent =
+      'Guardando...';
 
-async function assignEnrollmentCredential() {
-  const msg = document.getElementById('cred_msg');
-  msg.className = 'small mt-2';
-  msg.innerText = '';
 
-  try {
-    const nfc_user_id = parseInt(document.getElementById('cred_user_id').value, 10);
-    const uid_hex = document.getElementById('en_uid').value.trim();
-    const tag_type = document.getElementById('cred_tag_type').value;
-    const sessionId = currentEnrollmentSessionId || document.getElementById('en_session_id').value;
+    /*
+     * Utilizamos el endpoint de credenciales que
+     * ya existe en SigControl Central.
+     */
 
-    if (!nfc_user_id || !uid_hex) {
-      msg.className = 'small mt-2 text-danger';
-      msg.innerText = 'Se requiere usuario NFC y UID leído.';
-      return;
+    const credential =
+      await api(
+        '/api/nfc-credentials',
+        {
+          method: 'POST',
+
+          body: JSON.stringify({
+
+            nfc_user_id:
+              nfc_user_id,
+
+            uid_hex:
+              uid_hex,
+
+            tag_type:
+              tag_type,
+
+            is_active:
+              true
+
+          })
+
+        }
+      );
+
+
+    /*
+     * Nombre visible del usuario.
+     */
+
+    const userSelect =
+      document.getElementById(
+        'akuvox_user_id'
+      );
+
+
+    const selectedOption =
+      userSelect.options[
+        userSelect.selectedIndex
+      ];
+
+
+    const userText =
+      selectedOption
+        ? selectedOption.text.trim()
+        : 'Usuario';
+
+
+    /*
+     * Mostramos confirmación.
+     */
+
+    document
+      .getElementById('akuvox_saved_text')
+      .innerHTML =
+        `
+          <strong>${userText}</strong>
+          <br>
+
+          UID:
+          <code>${credential.uid_hex || uid_hex}</code>
+
+          <br>
+
+          Tipo:
+          <strong>${credential.tag_type || tag_type}</strong>
+        `;
+
+
+    document
+      .getElementById('akuvox_saved_panel')
+      .style.display =
+        'block';
+
+
+    document
+      .getElementById('akuvox_result')
+      .style.display =
+        'none';
+
+
+    document
+      .getElementById('akuvox_reader_panel')
+      .style.display =
+        'none';
+
+
+    document
+      .getElementById('akuvox_idle_panel')
+      .style.display =
+        'block';
+
+
+    document
+      .getElementById('akuvox_start_btn')
+      .style.display =
+        'block';
+
+
+    document
+      .getElementById('akuvox_cancel_btn')
+      .style.display =
+        'none';
+
+
+    msg.className =
+      'small mt-3 text-success';
+
+
+    msg.textContent =
+      '✅ Credencial asignada correctamente.';
+
+
+    setAkuvoxStatus(
+      'idle',
+      'Credencial guardada correctamente.'
+    );
+
+
+    /*
+     * Seleccionamos al mismo usuario en el panel
+     * "Credenciales del usuario".
+     */
+
+    const manageSelect =
+      document.getElementById(
+        'cred_manage_user_id'
+      );
+
+
+    if (manageSelect) {
+
+      manageSelect.value =
+        String(nfc_user_id);
+
     }
 
-    await api('/api/nfc-credentials', {
-      method: 'POST',
-      body: JSON.stringify({
-        nfc_user_id,
-        uid_hex,
-        tag_type,
-        is_active: true
-      })
-    });
 
-    if (sessionId) {
-      try {
-        await api('/api/enrollment/' + encodeURIComponent(sessionId) + '/consume', {
-          method: 'POST'
-        });
-      } catch (_) {}
-    }
-
-    stopEnrollmentPolling();
-    clearEnrollmentFields(true);
-
-    document.getElementById('cred_user_id').selectedIndex = 0;
-    document.getElementById('cred_tag_type').value = 'tag';
-
-    msg.className = 'small mt-2 text-success';
-    msg.innerText = '✅ Credencial asignada correctamente. Listo para el siguiente enrolamiento.';
-
-    document.getElementById('enroll_status_msg').className = 'small mt-2 text-muted';
-    document.getElementById('enroll_status_msg').innerText = 'Sesión cerrada. Inicia una nueva lectura para continuar.';
+    /*
+     * Recargamos usuarios porque la API puede reflejar
+     * cambios relacionados con las credenciales.
+     */
 
     await loadUsers();
-    await loadUserCredentials();
-    await loadAccessMatrix();
-  } catch (e) {
-    msg.className = 'small mt-2 text-danger';
-    msg.innerText = e.message;
-  }
-}
 
-async function requireAdminPage() {
-  const token = sessionStorage.getItem('token');
-  if (!token) {
-    window.location.href = '/login';
-    return false;
-  }
 
-  try {
-    const me = await api('/api/auth/me');
+    /*
+     * loadUsers reconstruye los <select>.
+     *
+     * Por eso volvemos a colocar explícitamente
+     * el usuario seleccionado.
+     */
 
-    if (!me || me.role !== 'admin') {
-      alert('Acceso solo para administradores.');
-      window.location.href = '/dashboard';
-      return false;
+    const updatedManageSelect =
+      document.getElementById(
+        'cred_manage_user_id'
+      );
+
+
+    if (updatedManageSelect) {
+
+      updatedManageSelect.value =
+        String(nfc_user_id);
+
     }
 
-    return true;
-  } catch (e) {
-    sessionStorage.removeItem('token');
-    window.location.href = '/login';
-    return false;
+
+    const updatedAkuvoxSelect =
+      document.getElementById(
+        'akuvox_user_id'
+      );
+
+
+    if (updatedAkuvoxSelect) {
+
+      updatedAkuvoxSelect.value =
+        String(nfc_user_id);
+
+    }
+
+
+    /*
+     * Actualizamos las vistas relacionadas.
+     */
+
+    await loadUserCredentials();
+
+
+    await loadAccessMatrix();
+
+
+    /*
+     * Limpiamos la credencial de memoria.
+     */
+
+    akuvoxLastRaw =
+      '';
+
+
+    akuvoxLastUid =
+      '';
+
+
+    akuvoxEnrollmentActive =
+      false;
+
   }
+
+  catch (e) {
+
+    const errorText =
+      String(
+        e.message ||
+        'No fue posible guardar la credencial.'
+      );
+
+
+    msg.className =
+      'small mt-3 text-danger';
+
+
+    /*
+     * Mensaje más amigable si la API rechaza
+     * una credencial duplicada.
+     */
+
+    const lowerError =
+      errorText.toLowerCase();
+
+
+    if (
+      lowerError.includes('already exists') ||
+      lowerError.includes('ya existe') ||
+      lowerError.includes('duplic') ||
+      lowerError.includes('unique')
+    ) {
+
+      msg.textContent =
+        'Esta credencial ya se encuentra registrada en SigControl.';
+
+    }
+
+    else {
+
+      msg.textContent =
+        errorText;
+
+    }
+
+
+    /*
+     * Conservamos visible la lectura.
+     *
+     * Si el servidor rechazó el registro, el
+     * administrador todavía puede comprobar el RAW
+     * y el UID normalizado.
+     */
+
+    document
+      .getElementById('akuvox_reader_panel')
+      .style.display =
+        'block';
+
+
+    document
+      .getElementById('akuvox_result')
+      .style.display =
+        'block';
+
+
+    document
+      .getElementById('akuvox_idle_panel')
+      .style.display =
+        'none';
+
+
+    setAkuvoxStatus(
+      'error',
+      'No fue posible guardar la credencial.'
+    );
+
+  }
+
+  finally {
+
+    saveButton.disabled =
+      false;
+
+
+    saveButton.textContent =
+      'Confirmar y asignar';
+
+  }
+
 }
 
+
+
+/* ========================================================= */
+/* SEGURIDAD DEL PANEL ADMIN                                 */
+/* ========================================================= */
+
+async function requireAdminPage() {
+
+  const token =
+    sessionStorage.getItem(
+      'token'
+    );
+
+
+  if (!token) {
+
+    window.location.href =
+      '/login';
+
+
+    return false;
+
+  }
+
+
+  try {
+
+    const me =
+      await api(
+        '/api/auth/me'
+      );
+
+
+    if (
+      !me ||
+      me.role !== 'admin'
+    ) {
+
+      alert(
+        'Acceso solo para administradores.'
+      );
+
+
+      window.location.href =
+        '/dashboard';
+
+
+      return false;
+
+    }
+
+
+    return true;
+
+  }
+
+  catch (e) {
+
+    sessionStorage.removeItem(
+      'token'
+    );
+
+
+    window.location.href =
+      '/login';
+
+
+    return false;
+
+  }
+
+}
+
+
+
+/* ========================================================= */
+/* INICIALIZACIÓN                                            */
+/* ========================================================= */
+
 (async function init() {
-  const ok = await requireAdminPage();
-  if (!ok) return;
+
+  /*
+   * Primero comprobamos que realmente sea
+   * un administrador.
+   */
+
+  const ok =
+    await requireAdminPage();
+
+
+  if (!ok) {
+
+    return;
+
+  }
+
+
+  /*
+   * Cargamos la información inicial.
+   */
 
   await loadDoors();
-  await loadUsers();
-  await loadAccessMatrix();
-  await loadDevices();
-  await loadEnrollmentStations();
-  await loadUserCredentials();
 
-  document.getElementById('st_name').value = document.getElementById('st_name').value || 'main';
-  document.getElementById('en_station_name').value = document.getElementById('en_station_name').value || 'main';
+
+  await loadUsers();
+
+
+  await loadAccessMatrix();
+
+
+  await loadDevices();
+
+
+  /*
+   * Después de loadUsers ya tenemos disponible
+   * el selector de usuarios para credenciales.
+   */
+
+  const credentialUserSelect =
+    document.getElementById(
+      'cred_manage_user_id'
+    );
+
+
+  if (
+    credentialUserSelect &&
+    credentialUserSelect.value
+  ) {
+
+    await loadUserCredentials();
+
+  }
+
+
+  /*
+   * Estado inicial del Akuvox.
+   */
+
+  setAkuvoxStatus(
+    'idle',
+    'Inicie una lectura.'
+  );
+
 })();
+
 </script>
+
 </body>
+
 </html>
